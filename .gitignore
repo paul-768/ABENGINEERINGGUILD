@@ -1,3 +1,75 @@
-.venv/
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+data/*.sqlite
+instance/
+
+# Flask
+.instance/
+.flaskenv
+.env
+.env.local
+.env.production
+
+# Uploads - Keep folder structure but ignore files
+app/static/uploads/
+!app/static/uploads/.gitkeep
+uploads/
+!uploads/.gitkeep
+
+# Backups
+backups/
+*.bak
+*.backup
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# PythonAnywhere specific
 *.pyc
+__pycache__/
+
+# Secrets and keys
+*.key
+*.pem
+secret_key.txt
+SECRET_KEY
+
+# Temporary files
+*.tmp
+temp/
+temp_uploads/
+
+# OS
+Thumbs.db
+desktop.ini
