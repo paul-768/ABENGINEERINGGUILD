@@ -5,9 +5,8 @@
     <div class="max-w-7xl mx-auto px-4 py-4">
         <!-- 3 Column Layout -->
         <div class="flex gap-4">
-            <!-- LEFT SIDEBAR - keep your existing sidebar code -->
+            <!-- LEFT SIDEBAR -->
             <div class="hidden lg:block w-72 flex-shrink-0">
-                <!-- Your existing sidebar content - keep as is -->
                 <div class="sticky top-4 space-y-3">
                     <!-- User Info Card -->
                     <div class="bg-white rounded-xl shadow p-4">
@@ -88,7 +87,7 @@
                                 </div>
                             </a>
                             <button onclick="openCreatePostModal()" class="flex-1 text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-500 text-xs transition border border-gray-200 hover:border-green-300">
-                                <i class="fas fa-pen-alt mr-1 text-[10px] text-green-500"></i> Share your thoughts Bayaw, {{ current_user.name.split()[0] }}!
+                                <i class="fas fa-pen-alt mr-1 text-[10px] text-green-500"></i> Share your thoughts!
                             </button>
                         </div>
                         <div class="flex justify-around mt-2 pt-2 border-t border-gray-100">
@@ -148,7 +147,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="flex flex-wrap items-center gap-x-2 text-xs text-gray-400 mt-0.5">
-                                        <span>{{ post.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                                        <span>{{ post.created_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
                                         {% if post.updated_at and post.updated_at != post.created_at %}
                                         <span class="text-gray-400">(edited)</span>
                                         {% endif %}
@@ -165,13 +164,13 @@
                                     </button>
                                     <div id="post-menu-{{ post.id }}" class="hidden absolute right-0 mt-1 bg-white rounded-lg shadow-lg border py-1 z-10 w-32">
                                         <button onclick="deletePost({{ post.id }})" class="w-full text-left px-3 py-1 text-sm text-red-600 hover:bg-red-50">
-                                        <i class="fas fa-trash mr-2"></i>
-                                        {% if current_user.is_admin and post.user_id != current_user.id %}
-                                        Delete (Admin)
-                                        {% else %}
-                                        Delete
-                                        {% endif %}
-                                    </button>
+                                            <i class="fas fa-trash mr-2"></i>
+                                            {% if current_user.is_admin and post.user_id != current_user.id %}
+                                            Delete (Admin)
+                                            {% else %}
+                                            Delete
+                                            {% endif %}
+                                        </button>
                                     </div>
                                 </div>
                                 {% endif %}
@@ -527,7 +526,6 @@
     text-decoration: underline;
 }
 
-/* Hide nested replies by default after a certain depth? No - let's make it toggleable */
 .replies-container.collapsed {
     display: none;
 }
@@ -593,23 +591,17 @@ function toggleReplies(commentId) {
     const toggleIcon = document.getElementById(`toggle-replies-icon-${commentId}`);
     const toggleText = document.getElementById(`toggle-replies-text-${commentId}`);
     
-    if (repliesContainer) {
+    if (repliesContainer && toggleIcon && toggleText) {
         if (repliesContainer.classList.contains('collapsed')) {
-            // Show replies
             repliesContainer.classList.remove('collapsed');
-            if (toggleIcon) {
-                toggleIcon.classList.remove('fa-chevron-right');
-                toggleIcon.classList.add('fa-chevron-down');
-            }
-            if (toggleText) toggleText.textContent = 'Hide replies';
+            toggleIcon.classList.remove('fa-chevron-right');
+            toggleIcon.classList.add('fa-chevron-down');
+            toggleText.textContent = 'Hide replies';
         } else {
-            // Hide replies
             repliesContainer.classList.add('collapsed');
-            if (toggleIcon) {
-                toggleIcon.classList.remove('fa-chevron-down');
-                toggleIcon.classList.add('fa-chevron-right');
-            }
-            if (toggleText) toggleText.textContent = 'Show replies';
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-right');
+            toggleText.textContent = 'Show replies';
         }
     }
 }
@@ -621,12 +613,10 @@ function toggleCommentText(commentId) {
     
     if (shortDiv && fullDiv && toggleBtn) {
         if (shortDiv.classList.contains('hidden')) {
-            // Currently showing full, switch to short
             shortDiv.classList.remove('hidden');
             fullDiv.classList.add('hidden');
             toggleBtn.innerHTML = '<i class="fas fa-chevron-down mr-1 text-xs"></i> Read more';
         } else {
-            // Currently showing short, switch to full
             shortDiv.classList.add('hidden');
             fullDiv.classList.remove('hidden');
             toggleBtn.innerHTML = '<i class="fas fa-chevron-up mr-1 text-xs"></i> Show less';
@@ -664,7 +654,8 @@ async function submitComment(postId) {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById(`comment-input-${postId}`).value = '';
+            const textarea = document.getElementById(`comment-input-${postId}`);
+            if (textarea) textarea.value = '';
             await loadCommentsForPost(postId);
             showToast('Comment posted!', 'success');
         } else {
@@ -678,6 +669,8 @@ async function submitComment(postId) {
 
 async function loadAllComments() {
     const postCards = document.querySelectorAll('.post-card');
+    if (!postCards.length) return;
+    
     for (const postCard of postCards) {
         const postId = postCard.getAttribute('data-post-id');
         if (postId) {
@@ -687,6 +680,9 @@ async function loadAllComments() {
 }
 
 async function loadCommentsForPost(postId) {
+    const container = document.getElementById(`comments-list-${postId}`);
+    if (!container) return;
+    
     try {
         const response = await fetch(`/community/api/comments/${postId}`, {
             headers: {
@@ -695,32 +691,27 @@ async function loadCommentsForPost(postId) {
         });
         const data = await response.json();
         
-        const container = document.getElementById(`comments-list-${postId}`);
-        if (container && data.success) {
-            container.innerHTML = renderComments(data.comments);
+        if (data.success) {
+            container.innerHTML = renderComments(data.comments, 0, postId);
             const commentCountSpan = document.getElementById(`comment-count-${postId}`);
             if (commentCountSpan) {
-                commentCountSpan.textContent = data.total_count;
+                commentCountSpan.textContent = data.total_count || data.comments.length;
             }
         }
     } catch (error) {
         console.error(`Error loading comments for post ${postId}:`, error);
-        const container = document.getElementById(`comments-list-${postId}`);
-        if (container) {
-            container.innerHTML = '<div class="text-center py-6 text-gray-400 text-sm"><i class="far fa-comment-dots text-2xl mb-2 block"></i>Error loading comments.</div>';
-        }
+        container.innerHTML = '<div class="text-center py-6 text-gray-400 text-sm"><i class="far fa-comment-dots text-2xl mb-2 block"></i>Error loading comments.</div>';
     }
 }
 
-function renderComments(comments, depth = 0) {
+function renderComments(comments, depth = 0, postId = null) {
     if (!comments || comments.length === 0) {
         return '<div class="text-center py-6 text-gray-400 text-sm"><i class="far fa-comment-dots text-2xl mb-2 block"></i>No comments yet. Be the first to comment!</div>';
     }
     
     let html = '';
-    const maxDepth = 3;
-    const maxCommentLength = 200; // Characters before showing "Read more"
-    const defaultCollapseReplies = depth >= 1; // Auto-collapse replies at depth 1 and above
+    const maxCommentLength = 200;
+    const defaultCollapseReplies = depth >= 1;
     
     for (let i = 0; i < comments.length; i++) {
         const comment = comments[i];
@@ -737,14 +728,14 @@ function renderComments(comments, depth = 0) {
         const isLong = commentText.length > maxCommentLength;
         const shortText = isLong ? commentText.substring(0, maxCommentLength) + '...' : commentText;
         
-        // Generate unique ID for this comment's replies container
         const repliesContainerId = `replies-container-${comment.id}`;
+        const currentPostId = postId || comment.post_id;
         
         html += `
         <div class="comment-item depth-${depth} ${isLast ? 'last-child' : ''}" id="comment-${comment.id}" data-comment-id="${comment.id}" style="margin-left: ${indentPx}px; position: relative;">
             ${depth > 0 ? `
-            <div class="thread-line-vertical" style="position: absolute; left: -20px; top: 0; bottom: 0; width: 2px; background: #d1d5db;"></div>
-            <div class="thread-line-horizontal" style="position: absolute; left: -20px; top: 20px; width: 16px; height: 2px; background: #d1d5db;"></div>
+            <div class="thread-line-vertical" style="position: absolute; left: -20px; top: 28px; bottom: 0; width: 2px; background: #e5e7eb;"></div>
+            <div class="thread-line-horizontal" style="position: absolute; left: -20px; top: 28px; width: 16px; height: 2px; background: #e5e7eb;"></div>
             ` : ''}
             
             <div class="flex gap-3">
@@ -763,17 +754,16 @@ function renderComments(comments, depth = 0) {
                         
                         ${isOwn ? `
                         <div class="flex items-center gap-1 ml-auto">
-                            <button onclick="editCommentInline(${comment.id}, ${comment.post_id})" class="text-gray-400 hover:text-amber-600 text-xs transition">
+                            <button onclick="editCommentInline(${comment.id}, ${currentPostId})" class="text-gray-400 hover:text-amber-600 text-xs transition">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
-                            <button onclick="deleteCommentInline(${comment.id}, ${comment.post_id})" class="text-gray-400 hover:text-red-500 text-xs transition">
+                            <button onclick="deleteCommentInline(${comment.id}, ${currentPostId})" class="text-gray-400 hover:text-red-500 text-xs transition">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                         ` : ''}
                     </div>
                     
-                    <!-- Comment Text with Read More -->
                     <div id="comment-view-${comment.id}" class="comment-view mt-1">
                         <div id="comment-text-short-${comment.id}" class="comment-text ${isLong ? 'collapsed' : ''}">
                             <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${escapeHtml(isLong ? shortText : commentText)}</p>
@@ -788,11 +778,10 @@ function renderComments(comments, depth = 0) {
                         ` : ''}
                     </div>
                     
-                    <!-- Edit mode -->
                     <div id="comment-edit-${comment.id}" class="comment-edit hidden mt-2">
                         <textarea id="edit-text-${comment.id}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent bg-white" rows="2">${escapeHtml(comment.content)}</textarea>
                         <div class="flex gap-2 mt-2">
-                            <button onclick="saveCommentEditInline(${comment.id}, ${comment.post_id})" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs transition">
+                            <button onclick="saveCommentEditInline(${comment.id}, ${currentPostId})" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs transition">
                                 Save
                             </button>
                             <button onclick="cancelCommentEditInline(${comment.id})" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-md text-xs transition">
@@ -802,7 +791,7 @@ function renderComments(comments, depth = 0) {
                     </div>
                     
                     <div class="flex items-center gap-4 mt-1.5">
-                        <button onclick="likeCommentInline(${comment.id}, ${comment.post_id})" class="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition">
+                        <button onclick="likeCommentInline(${comment.id}, ${currentPostId})" class="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition">
                             <i id="comment-like-icon-${comment.id}" class="${liked ? 'fas fa-heart text-red-500' : 'far fa-heart'} text-xs"></i>
                             <span id="comment-like-count-${comment.id}" class="text-xs">${likeCount}</span>
                         </button>
@@ -828,7 +817,7 @@ function renderComments(comments, depth = 0) {
                             <div class="flex-1">
                                 <textarea id="reply-content-${comment.id}" rows="2" placeholder="Write a reply..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-400 resize-none bg-white"></textarea>
                                 <div class="flex gap-2 mt-1">
-                                    <button onclick="submitReplyInline(${comment.id}, ${comment.post_id})" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs transition">
+                                    <button onclick="submitReplyInline(${comment.id}, ${currentPostId})" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs transition">
                                         Reply
                                     </button>
                                     <button onclick="hideReplyFormInline(${comment.id})" class="px-3 py-1 text-gray-400 hover:text-gray-600 text-xs">
@@ -839,9 +828,8 @@ function renderComments(comments, depth = 0) {
                         </div>
                     </div>
                     
-                    <!-- Replies Container with Toggle -->
                     <div id="${repliesContainerId}" class="replies-container mt-3 ${defaultCollapseReplies && hasReplies ? 'collapsed' : ''}">
-                        ${hasReplies ? renderComments(comment.replies, depth + 1) : ''}
+                        ${hasReplies ? renderComments(comment.replies, depth + 1, currentPostId) : ''}
                     </div>
                 </div>
             </div>
@@ -914,20 +902,12 @@ async function submitReplyInline(commentId, postId) {
             body: formData
         });
         
-        if (!response.ok) {
-            const text = await response.text();
-            console.error('Server response:', text);
-            showToast('Server error. Check console.', 'error');
-            return;
-        }
-        
         const data = await response.json();
         
         if (data.success) {
             hideReplyFormInline(commentId);
             await loadCommentsForPost(postId);
             
-            // Auto-expand replies after posting
             const repliesContainer = document.getElementById(`replies-container-${commentId}`);
             const toggleIcon = document.getElementById(`toggle-replies-icon-${commentId}`);
             const toggleText = document.getElementById(`toggle-replies-text-${commentId}`);
@@ -954,15 +934,19 @@ async function submitReplyInline(commentId, postId) {
 function editCommentInline(commentId, postId) {
     const viewDiv = document.getElementById(`comment-view-${commentId}`);
     const editDiv = document.getElementById(`comment-edit-${commentId}`);
-    if (viewDiv) viewDiv.classList.add('hidden');
-    if (editDiv) editDiv.classList.remove('hidden');
+    if (viewDiv && editDiv) {
+        viewDiv.classList.add('hidden');
+        editDiv.classList.remove('hidden');
+    }
 }
 
 function cancelCommentEditInline(commentId) {
     const viewDiv = document.getElementById(`comment-view-${commentId}`);
     const editDiv = document.getElementById(`comment-edit-${commentId}`);
-    if (viewDiv) viewDiv.classList.remove('hidden');
-    if (editDiv) editDiv.classList.add('hidden');
+    if (viewDiv && editDiv) {
+        viewDiv.classList.remove('hidden');
+        editDiv.classList.add('hidden');
+    }
 }
 
 async function saveCommentEditInline(commentId, postId) {
@@ -1031,14 +1015,16 @@ function toggleReadMore(postId) {
     const fullContent = document.getElementById(`post-content-full-${postId}`);
     const readMoreBtn = document.getElementById(`read-more-btn-${postId}`);
     
-    if (shortContent.classList.contains('hidden')) {
-        shortContent.classList.remove('hidden');
-        fullContent.classList.add('hidden');
-        readMoreBtn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> Read more';
-    } else {
-        shortContent.classList.add('hidden');
-        fullContent.classList.remove('hidden');
-        readMoreBtn.innerHTML = '<i class="fas fa-chevron-up mr-1"></i> Show less';
+    if (shortContent && fullContent && readMoreBtn) {
+        if (shortContent.classList.contains('hidden')) {
+            shortContent.classList.remove('hidden');
+            fullContent.classList.add('hidden');
+            readMoreBtn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> Read more';
+        } else {
+            shortContent.classList.add('hidden');
+            fullContent.classList.remove('hidden');
+            readMoreBtn.innerHTML = '<i class="fas fa-chevron-up mr-1"></i> Show less';
+        }
     }
 }
 
@@ -1049,14 +1035,22 @@ function editPost(postId) {
     const contentFull = document.getElementById(`post-content-full-${postId}`)?.querySelector('p')?.innerText || '';
     const currentContent = contentFull || contentShort;
     
-    document.getElementById('editPostTitle').value = titleElement ? titleElement.innerText : '';
-    document.getElementById('editPostContent').value = currentContent.replace(/\.\.\.$/, '');
-    document.getElementById('editPostModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    const titleInput = document.getElementById('editPostTitle');
+    const contentInput = document.getElementById('editPostContent');
+    
+    if (titleInput) titleInput.value = titleElement ? titleElement.innerText : '';
+    if (contentInput) contentInput.value = currentContent.replace(/\.\.\.$/, '');
+    
+    const modal = document.getElementById('editPostModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 function closeEditPostModal() {
-    document.getElementById('editPostModal').classList.add('hidden');
+    const modal = document.getElementById('editPostModal');
+    if (modal) modal.classList.add('hidden');
     document.body.style.overflow = '';
     currentEditPostId = null;
 }
@@ -1064,8 +1058,8 @@ function closeEditPostModal() {
 async function savePostEdit() {
     if (!currentEditPostId) return;
     
-    const title = document.getElementById('editPostTitle').value.trim();
-    const content = document.getElementById('editPostContent').value.trim();
+    const title = document.getElementById('editPostTitle')?.value.trim() || '';
+    const content = document.getElementById('editPostContent')?.value.trim();
     
     if (!content) {
         showToast('Content cannot be empty', 'error');
@@ -1179,7 +1173,8 @@ function filterPostsByTopic(topicId, topicName) {
     const filterBar = document.getElementById('topic-filter-bar');
     if (filterBar) {
         filterBar.classList.remove('hidden');
-        document.getElementById('active-topic-name').textContent = topicName;
+        const activeTopicName = document.getElementById('active-topic-name');
+        if (activeTopicName) activeTopicName.textContent = topicName;
     }
     showToast(`Showing posts in ${topicName}`, 'success');
 }
@@ -1223,19 +1218,27 @@ function closeCreatePostModal() {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
     }
-    document.getElementById('modalPostTitle').value = '';
-    document.getElementById('modalPostContent').value = '';
-    document.getElementById('modalImageInput').value = '';
-    document.getElementById('modalImagePreview').classList.add('hidden');
+    const titleInput = document.getElementById('modalPostTitle');
+    const contentInput = document.getElementById('modalPostContent');
+    const imageInput = document.getElementById('modalImageInput');
+    const imagePreview = document.getElementById('modalImagePreview');
+    
+    if (titleInput) titleInput.value = '';
+    if (contentInput) contentInput.value = '';
+    if (imageInput) imageInput.value = '';
+    if (imagePreview) imagePreview.classList.add('hidden');
 }
 
 function openPostWithType(type) {
-    document.getElementById('modalPostType').value = type;
+    const postTypeInput = document.getElementById('modalPostType');
+    if (postTypeInput) postTypeInput.value = type;
     openCreatePostModal();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadAllComments();
+    if (typeof loadAllComments === 'function') {
+        loadAllComments().catch(e => console.warn('Error loading comments:', e));
+    }
     
     const imageInput = document.getElementById('modalImageInput');
     if (imageInput) {
@@ -1243,8 +1246,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    document.getElementById('modalPreviewImg').src = event.target.result;
-                    document.getElementById('modalImagePreview').classList.remove('hidden');
+                    const previewImg = document.getElementById('modalPreviewImg');
+                    const previewDiv = document.getElementById('modalImagePreview');
+                    if (previewImg && previewDiv) {
+                        previewImg.src = event.target.result;
+                        previewDiv.classList.remove('hidden');
+                    }
                 };
                 reader.readAsDataURL(e.target.files[0]);
             }
@@ -1254,7 +1261,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 document.addEventListener('click', function(e) {
     if (!e.target.closest('[onclick*="togglePostMenu"]') && !e.target.closest('[id^="post-menu-"]')) {
-        document.querySelectorAll('[id^="post-menu-"]').forEach(menu => menu.classList.add('hidden'));
+        document.querySelectorAll('[id^="post-menu-"]').forEach(menu => {
+            if (menu) menu.classList.add('hidden');
+        });
     }
 });
 
@@ -1266,7 +1275,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Store current user data in a global variable (only once)
 window.currentUserData = {
     id: {{ current_user.id }},
     name: '{{ current_user.name }}',

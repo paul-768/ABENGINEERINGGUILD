@@ -78,6 +78,10 @@ def get_recent_activities(limit=10):
     activities.sort(key=lambda x: x['timestamp'], reverse=True)
     return activities[:limit]
 
+@community_bp.route('/test')
+def test():
+    return "Community blueprint is working!"
+
 @community_bp.route('/api/recent_activity')
 @login_required
 def get_recent_activity():

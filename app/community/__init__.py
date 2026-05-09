@@ -1,7 +1,7 @@
 # app/community/__init__.py
 from flask import Blueprint
 
-# Create the blueprint
+# Create the blueprint with url_prefix
 community_bp = Blueprint('community', __name__, url_prefix='/community')
 
 # Import routes after blueprint creation
