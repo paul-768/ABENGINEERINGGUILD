@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl px-4">
+    <!-- Results Header - Clean and subtle -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center mb-6 transition-colors duration-150">
+        
+        <!-- Simple Icon - No heavy colored circles -->
+        <div class="mb-4">
+            {% if score >= 75 %}
+            <i class="fas fa-trophy text-4xl text-yellow-500 dark:text-yellow-500"></i>
+            {% elif score >= 50 %}
+            <i class="fas fa-thumbs-up text-4xl text-blue-500 dark:text-blue-400"></i>
+            {% else %}
+            <i class="fas fa-book-open text-4xl text-gray-500 dark:text-gray-400"></i>
+            {% endif %}
+        </div>
+        
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Quiz Completed</h1>
+        <p class="text-gray-600 dark:text-gray-400 mb-3">
+            You scored <span class="font-bold text-gray-800 dark:text-gray-200">{{ score }}%</span> 
+            ({{ correct }}/{{ total }} correct)
+        </p>
+        
+        <!-- Simple Performance Message - No heavy backgrounds -->
+        <div class="mb-5 px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
+            {% if score >= 75 %}
+            <p class="text-gray-700 dark:text-gray-300 text-sm">🌟 <span class="font-medium">Excellent!</span> You have a strong understanding of this topic.</p>
+            {% elif score >= 50 %}
+            <p class="text-gray-700 dark:text-gray-300 text-sm">📚 <span class="font-medium">Good effort!</span> Review the explanations and try again.</p>
+            {% else %}
+            <p class="text-gray-700 dark:text-gray-300 text-sm">💪 <span class="font-medium">Keep practicing!</span> Review the materials and take another quiz.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Buttons - Clean and consistent -->
+        <div class="flex flex-wrap justify-center gap-3">
+            <a href="{{ url_for('quiz.review_quiz') }}" 
+               class="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition-colors duration-150 inline-flex items-center gap-2 text-sm">
+                <i class="fas fa-eye text-xs"></i> Review Answers
+            </a>
+            <a href="{{ url_for('quiz.quiz_home') }}" 
+               class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium transition-colors duration-150 inline-flex items-center gap-2 text-sm">
+                <i class="fas fa-redo-alt text-xs"></i> New Quiz
+            </a>
+            <a href="{{ url_for('main.dashboard') }}" 
+               class="bg-gray-400 hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500 text-white px-5 py-2 rounded-lg font-medium transition-colors duration-150 inline-flex items-center gap-2 text-sm">
+                <i class="fas fa-home text-xs"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats - Clean cards with subtle accents -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Correct Card - Subtle green border -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center border-l-4 border-green-500 dark:border-green-600">
+            <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ correct }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-green-500 dark:text-green-500 text-xs"></i>
+                Correct
+            </div>
+        </div>
+        
+        <!-- Incorrect Card - Subtle red border -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center border-l-4 border-red-500 dark:border-red-600">
+            <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ total - correct }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center gap-1">
+                <i class="fas fa-times-circle text-red-500 dark:text-red-500 text-xs"></i>
+                Incorrect
+            </div>
+        </div>
+        
+        <!-- Score Card - Subtle blue border -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center border-l-4 border-blue-500 dark:border-blue-600">
+            <div class="text-2xl font-bold text-gray-700 dark:text-gray-300">{{ score }}%</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center gap-1">
+                <i class="fas fa-chart-line text-blue-500 dark:text-blue-400 text-xs"></i>
+                Score
+            </div>
+        </div>
+    </div>
+
+    <!-- Topic Performance - Subtle progress bar -->
+    {% if questions and questions[0].topic_id %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 mb-6">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Topic Performance</h2>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ questions[0].topic.name }}</span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div class="bg-green-500 dark:bg-green-600 h-2 rounded-full transition-all duration-300" style="width: {{ score }}%"></div>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <i class="fas fa-chart-simple mr-1"></i>
+            You scored {{ score }}% on this topic
+        </p>
+    </div>
+    {% endif %}
+    
+    <!-- Recommendation Section - Optional subtle suggestion -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5">
+        <div class="flex items-start gap-3">
+            <div class="text-gray-400 dark:text-gray-500">
+                <i class="fas fa-lightbulb text-lg"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Recommendation</h3>
+                {% if score >= 75 %}
+                <p class="text-xs text-gray-600 dark:text-gray-400">Great job! Consider taking quizzes on other topics to expand your knowledge.</p>
+                {% elif score >= 50 %}
+                <p class="text-xs text-gray-600 dark:text-gray-400">Review the incorrect answers and try this quiz again to improve your score.</p>
+                {% else %}
+                <p class="text-xs text-gray-600 dark:text-gray-400">Spend more time reviewing the study materials before attempting this quiz again.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

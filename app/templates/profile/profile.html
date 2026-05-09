@@ -1,0 +1,1085 @@
+<!-- app/templates/profile/profile.html - Professional UI with Fixed Modal (New Post Button Removed) -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen" style="background-color: #F5F5F5;">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- PROFILE HEADER SECTION -->
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden mb-6" style="border: 1px solid #E0E0E0;">
+            <div class="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                <!-- Avatar -->
+                <div class="relative flex-shrink-0">
+                    <div class="w-28 h-28 rounded-full overflow-hidden shadow-lg" style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
+                        {% if user.profile_picture and user.profile_picture != 'default_profile.png' %}
+                        <img src="{{ url_for('static', filename='uploads/profile_pictures/' + user.profile_picture) }}" 
+                             class="w-full h-full object-cover" 
+                             alt="{{ user.name }}"
+                             id="profile-avatar">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <span class="text-white text-4xl font-bold">{{ user.name[0]|upper }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if user.id == current_user.id %}
+                    <button id="uploadProfilePicBtn" onclick="document.getElementById('profile-picture-input').click()" 
+        class="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+        style="background-color: #FFC107;">
+    <i class="fas fa-camera text-white text-xs"></i>
+</button>
+                    <input type="file" id="profile-picture-input" accept="image/*" class="hidden" onchange="uploadProfilePicture(this.files[0])">
+                    {% endif %}
+                </div>
+                
+                <!-- User Info -->
+                <div class="flex-1 text-center sm:text-left">
+                    <h1 class="text-2xl font-bold" style="color: #212121;">{{ user.name }}</h1>
+                    <p class="text-sm mt-1" style="color: #757575;">@{{ user.email.split('@')[0] }}</p>
+                    <p class="text-sm mt-2" style="color: #4CAF50;">
+                        <i class="fas fa-graduation-cap mr-1"></i> Agricultural & Biosystems Engineering Student
+                    </p>
+                    <div class="flex flex-wrap justify-center sm:justify-start gap-4 mt-3">
+                        {% if user.location %}
+                        <div class="flex items-center gap-1 text-sm" style="color: #616161;">
+                            <i class="fas fa-map-marker-alt" style="color: #FFC107;"></i>
+                            <span>{{ user.location }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex items-center gap-1 text-sm" style="color: #616161;">
+                            <i class="fas fa-calendar-alt" style="color: #4CAF50;"></i>
+                            <span>Joined {{ user.created_at.strftime('%B %Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TWO COLUMN LAYOUT -->
+        <div class="flex flex-col lg:flex-row gap-6">
+            
+            <!-- LEFT SIDEBAR - STICKY -->
+            <div class="lg:w-1/3 space-y-5 lg:sticky lg:top-6" style="height: calc(100vh - 2rem); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;">
+                
+                <!-- STATS CARD -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm" style="border: 1px solid #E0E0E0;">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: #212121;">
+                        <i class="fas fa-chart-line" style="color: #4CAF50;"></i> Overview
+                    </h3>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="p-3 rounded-xl" style="background-color: #E8F5E9;">
+                            <div class="text-2xl font-bold" style="color: #2E7D32;">{{ posts|length if posts is not none else 0 }}</div>
+                            <div class="text-xs mt-1" style="color: #757575;">Posts</div>
+                        </div>
+                        <div class="p-3 rounded-xl" style="background-color: #E8F5E9;">
+                            <div class="text-2xl font-bold" style="color: #2E7D32;">{{ user.friends_count }}</div>
+                            <div class="text-xs mt-1" style="color: #757575;">Friends</div>
+                        </div>
+                        <div class="p-3 rounded-xl" style="background-color: #E8F5E9;">
+                            <div class="text-2xl font-bold" style="color: #2E7D32;">{{ average_score }}%</div>
+                            <div class="text-xs mt-1" style="color: #757575;">Avg Score</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ABOUT SECTION -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm" style="border: 1px solid #E0E0E0;">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: #212121;">
+                        <i class="fas fa-user-circle" style="color: #4CAF50;"></i> About
+                    </h3>
+                    
+                    {% if user.bio %}
+                    <div class="mb-4">
+                        <p class="text-sm break-words whitespace-pre-wrap" style="color: #616161; line-height: 1.6;">{{ user.bio }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-graduation-cap w-5" style="color: #4CAF50;"></i>
+                            <span style="color: #616161;">BS Agricultural & Biosystems Engineering</span>
+                        </div>
+                        {% if user.location %}
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-university w-5" style="color: #4CAF50;"></i>
+                            <span style="color: #616161;">University of the Philippines Los Baños</span>
+                        </div>
+                        {% endif %}
+                        {% if user.website %}
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-globe w-5" style="color: #4CAF50;"></i>
+                            <a href="{{ user.website }}" target="_blank" style="color: #4CAF50;" class="hover:underline break-all">{{ user.website|replace('https://', '')|replace('http://', '')|truncate(30) }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- ACTION BUTTONS -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm" style="border: 1px solid #E0E0E0;">
+                    {% if user.id == current_user.id %}
+                    <a href="{{ url_for('profile.edit_profile') }}" 
+                       class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:shadow-md"
+                       style="background-color: #FFC107; color: #212121;">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    {% else %}
+                    <div class="space-y-3">
+                        <button onclick="startConversation({{ user.id }})" 
+                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:shadow-md"
+                                style="background-color: #4CAF50; color: white;">
+                            <i class="fas fa-comment"></i> Message
+                        </button>
+                        
+                        {% if friendship %}
+                            {% if friendship.status == 'accepted' %}
+                            <button onclick="removeFriend({{ user.id }})" 
+                                    class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:shadow-md"
+                                    style="background-color: #EF5350; color: white;">
+                                <i class="fas fa-user-minus"></i> Remove Friend
+                            </button>
+                            {% elif friendship.user_id == current_user.id and friendship.status == 'pending' %}
+                            <button class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium cursor-not-allowed"
+                                    style="background-color: #BDBDBD; color: white;">
+                                <i class="fas fa-clock"></i> Request Sent
+                            </button>
+                            {% elif friendship.friend_id == current_user.id and friendship.status == 'pending' %}
+                            <div class="flex gap-3">
+                                <button onclick="acceptFriendRequest({{ friendship.id }})" 
+                                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:shadow-md"
+                                        style="background-color: #4CAF50; color: white;">
+                                    <i class="fas fa-check"></i> Accept
+                                </button>
+                                <button onclick="rejectFriendRequest({{ friendship.id }})" 
+                                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:shadow-md"
+                                        style="background-color: #EF5350; color: white;">
+                                    <i class="fas fa-times"></i> Decline
+                                </button>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                        <button onclick="sendFriendRequest({{ user.id }})" 
+                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:shadow-md"
+                                style="background-color: #FFC107; color: #212121;">
+                            <i class="fas fa-user-plus"></i> Connect
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- SKILLS / TOPICS PROGRESS -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm" style="border: 1px solid #E0E0E0;">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2" style="color: #212121;">
+                        <i class="fas fa-chalkboard-teacher" style="color: #4CAF50;"></i> Topic Mastery
+                    </h3>
+                    <div class="space-y-4">
+                        {% for topic in topic_scores %}
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span style="color: #616161;" class="truncate">
+                                    <i class="{{ topic.icon }} mr-1" style="color: #4CAF50;"></i> 
+                                    {{ topic.name }}
+                                </span>
+                                <span style="color: #4CAF50; font-weight: 500;" class="flex-shrink-0 ml-2">{{ topic.score }}%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: #E8F5E9;">
+                                <div class="h-full rounded-full" style="width: {{ topic.score }}%; {% if topic.score >= 70 %}background-color: #4CAF50;{% else %}background-color: #FFC107;{% endif %}"></div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-sm text-gray-500">No quiz data yet. Take some quizzes to see your mastery!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- RIGHT COLUMN - RECENT ACTIVITY -->
+            <div class="lg:w-2/3">
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden" style="border: 1px solid #E0E0E0;">
+                    <!-- Header - New Post Button Removed -->
+                    <div class="px-6 py-4 border-b" style="border-color: #F0F0F0;">
+                        <h3 class="font-semibold flex items-center gap-2" style="color: #212121;">
+                            <i class="fas fa-clock" style="color: #4CAF50;"></i> Recent Activity
+                        </h3>
+                    </div>
+                    
+                    <!-- Posts Feed -->
+                    <div class="p-6 space-y-5">
+                        {% if posts and posts|length > 0 %}
+                            {% for post in posts %}
+                            <div class="rounded-xl p-5 transition-all hover:shadow-md" style="background-color: #FAFAFA; border: 1px solid #F0F0F0;" id="post-{{ post.id }}">
+                                <!-- Post Header -->
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                                        <a href="{{ url_for('profile.view_profile', user_id=post.author.id) }}" class="flex-shrink-0">
+                                            <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
+                                                {% if post.author.profile_picture and post.author.profile_picture != 'default_profile.png' %}
+                                                <img src="{{ url_for('static', filename='uploads/profile_pictures/' + post.author.profile_picture) }}" 
+                                                     class="w-full h-full rounded-full object-cover">
+                                                {% else %}
+                                                <span class="text-white text-sm font-bold">{{ post.author.name[0]|upper }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </a>
+                                        <div class="min-w-0">
+                                            <a href="{{ url_for('profile.view_profile', user_id=post.author.id) }}" 
+                                               class="font-semibold hover:text-green-600 transition truncate block" style="color: #212121;">
+                                                {{ post.author.name }}
+                                            </a>
+                                            <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                <span class="text-xs" style="color: #9E9E9E;">{{ post.created_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                                                {% if post.topic %}
+                                                <span class="text-xs px-2 py-0.5 rounded-full" style="background-color: #E8F5E9; color: #4CAF50;">{{ post.topic.name }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Post Options Menu -->
+                                    <div class="relative flex-shrink-0">
+                                        <button class="p-2 rounded-full transition-colors" style="color: #9E9E9E;"
+                                                onclick="togglePostActions({{ post.id }})">
+                                            <i class="fas fa-ellipsis-h text-sm"></i>
+                                        </button>
+                                        <div id="post-actions-{{ post.id }}" 
+                                             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border py-1 z-50 hidden"
+                                             style="border-color: #E0E0E0;">
+                                            {% if post.user_id == current_user.id or current_user.is_admin %}
+                                            {% if post.user_id == current_user.id %}
+                                            <button onclick="editPost({{ post.id }})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-3"
+                                                    style="color: #424242;">
+                                                <i class="fas fa-edit" style="color: #4CAF50; width: 18px;"></i>Edit Post
+                                            </button>
+                                            <button onclick="deletePost({{ post.id }})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-3"
+                                                    style="color: #EF5350;">
+                                                <i class="fas fa-trash" style="color: #EF5350; width: 18px;"></i>Delete Post
+                                            </button>
+                                            {% endif %}
+                                            <button onclick="hidePost({{ post.id }})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-3"
+                                                    style="color: #424242;">
+                                                <i class="fas fa-eye-slash" style="color: #757575; width: 18px;"></i>Hide Post
+                                            </button>
+                                            {% endif %}
+                                            <button onclick="savePost({{ post.id }})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-3"
+                                                    style="color: #424242;">
+                                                <i class="fas fa-bookmark" style="color: #FFC107; width: 18px;"></i>Save Post
+                                            </button>
+                                            <button onclick="sharePost({{ post.id }})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-3"
+                                                    style="color: #424242;">
+                                                <i class="fas fa-share" style="color: #4CAF50; width: 18px;"></i>Share Post
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Post Title -->
+                                {% if post.title and post.title != "Hi" %}
+                                <div class="mb-2">
+                                    <h4 class="font-bold break-words" style="color: #212121;">📌 {{ post.title }}</h4>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Post Content with See More/See Less -->
+                                <div class="mb-3">
+                                    {% if post.content|length > 200 %}
+                                        <p class="leading-relaxed break-words whitespace-pre-wrap" style="color: #424242; font-size: 0.95rem; line-height: 1.6;">
+                                            <span id="short-{{ post.id }}">{{ post.content[:200] }}...</span>
+                                            <span id="full-{{ post.id }}" style="display:none;">{{ post.content }}</span>
+                                        </p>
+                                        <button onclick="toggleContent({{ post.id }})" id="btn-{{ post.id }}" class="text-sm mt-1" style="color:#4CAF50;">See more</button>
+                                    {% else %}
+                                        <p class="leading-relaxed break-words whitespace-pre-wrap" style="color: #424242; font-size: 0.95rem; line-height: 1.6;">{{ post.content }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Post Media -->
+                                {% if post.media_file %}
+                                <div class="mb-3 rounded-xl overflow-hidden cursor-pointer" onclick="openImageViewer('{{ url_for('static', filename='uploads/post_images/' + post.media_file) }}')">
+                                    <img src="{{ url_for('static', filename='uploads/post_images/' + post.media_file) }}" 
+                                         class="w-full max-h-80 object-cover transition-transform hover:scale-105 duration-300">
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Interaction Buttons -->
+                                <div class="flex items-center gap-6 pt-3 border-t flex-wrap" style="border-color: #F0F0F0;">
+                                    <button onclick="likePost({{ post.id }})" 
+                                            class="flex items-center gap-2 py-1 px-3 rounded-full transition-all hover:scale-105">
+                                        <i class="fas fa-heart {% if post.likes|selectattr('user_id', 'equalto', current_user.id)|list %}text-red-500{% endif %}" 
+                                           id="like-icon-{{ post.id }}" style="color: #EF5350;"></i>
+                                        <span class="text-sm" id="like-count-{{ post.id }}" style="color: #616161;">{{ post.like_count() }}</span>
+                                    </button>
+                                    
+                                    <button onclick="toggleComments({{ post.id }})" 
+                                            class="flex items-center gap-2 py-1 px-3 rounded-full transition-all hover:scale-105">
+                                        <i class="fas fa-comment" style="color: #4CAF50;"></i>
+                                        <span class="text-sm" style="color: #616161;">{{ post.comment_count() }}</span>
+                                    </button>
+                                    
+                                    <button onclick="sharePost({{ post.id }})" 
+                                            class="flex items-center gap-2 py-1 px-3 rounded-full transition-all hover:scale-105">
+                                        <i class="fas fa-share-alt" style="color: #4CAF50;"></i>
+                                        <span class="text-sm" style="color: #616161;">Share</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Comments Section -->
+                                <div id="comments-section-{{ post.id }}" class="mt-4 hidden">
+                                    <div class="mb-3 flex gap-2">
+                                        <input type="text" 
+                                               id="comment-input-{{ post.id }}"
+                                               placeholder="Write a comment..." 
+                                               class="flex-1 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2"
+                                               style="border: 1px solid #E0E0E0;">
+                                        <button onclick="addComment(event, {{ post.id }})" 
+                                                class="px-4 py-2 rounded-full text-sm font-medium transition-all hover:shadow-md"
+                                                style="background-color: #4CAF50; color: white;">
+                                            Post
+                                        </button>
+                                    </div>
+                                    <div id="comments-list-{{ post.id }}" class="space-y-3 max-h-64 overflow-y-auto">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                        {% else %}
+                            <div class="text-center py-12">
+                                <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style="background-color: #E8F5E9;">
+                                    <i class="fas fa-newspaper text-3xl" style="color: #4CAF50;"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold mb-2" style="color: #212121;">No posts yet</h3>
+                                <p style="color: #757575;">{% if user.id == current_user.id %}Start sharing your thoughts with the community!{% else %}{{ user.name }} hasn't posted anything yet.{% endif %}</p>
+                                <!-- Removed "Create Your First Post" button -->
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Post Modal - Fixed (Kept for reference but not triggered) -->
+<div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl">
+        <div class="p-5">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Create New Post</h3>
+                <button onclick="closeCreatePostModal()" class="text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Form -->
+            <form id="createPostForm" onsubmit="createPost(event)">
+                <!-- Title Field -->
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-gray-400 text-xs">(Optional)</span></label>
+                    <input type="text" id="postTitle" 
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
+                           placeholder="What's on your mind?">
+                </div>
+                
+                <!-- Content Field -->
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Content <span class="text-red-500">*</span></label>
+                    <textarea id="postContent" rows="4" 
+                              class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none outline-none text-sm"
+                              placeholder="Share your thoughts..." required></textarea>
+                </div>
+                
+                <!-- Media Upload Field -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Media <span class="text-gray-400 text-xs">(Optional)</span></label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-green-500 transition-colors cursor-pointer" onclick="document.getElementById('postMedia').click()">
+                        <input type="file" id="postMedia" accept="image/*" class="hidden" onchange="previewMedia(this)">
+                        <i class="fas fa-cloud-upload-alt text-2xl text-gray-400"></i>
+                        <p class="text-xs text-gray-500 mt-1">Click to upload image</p>
+                    </div>
+                    <div id="mediaPreview" class="mt-2 hidden">
+                        <img id="previewImage" class="rounded-lg max-h-32 object-cover w-full">
+                        <button type="button" onclick="removeMedia()" class="mt-1 text-xs text-red-500 hover:text-red-600">Remove</button>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                    <button type="button" onclick="closeCreatePostModal()" 
+                            class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" id="createPostSubmitBtn"
+                            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm"
+                            style="background-color: #4CAF50; color: white;">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Post</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Post Modal -->
+<div id="editPostModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl">
+        <div class="p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Edit Post</h3>
+                <button onclick="closeEditPostModal()" class="text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="savePostChanges(event)">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-gray-400 text-xs">(Optional)</span></label>
+                    <input type="text" id="editPostTitle" 
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Content <span class="text-red-500">*</span></label>
+                    <textarea id="editPostContent" rows="5" 
+                              class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none outline-none text-sm"
+                              required></textarea>
+                </div>
+                
+                <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                    <button type="button" onclick="closeEditPostModal()" 
+                            class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-all text-sm font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm"
+                            style="background-color: #4CAF50; color: white;">
+                        <i class="fas fa-save"></i>
+                        <span>Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="imageViewer" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden" onclick="closeImageViewer()">
+    <button class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300">&times;</button>
+    <img id="viewerImage" class="max-w-full max-h-full object-contain">
+</div>
+
+<style>
+/* Hide scrollbar for Chrome/Safari/Edge */
+.lg\:w-1\/3::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.lg\:w-1\/3 {
+    scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE/Edge */
+.lg\:w-1\/3 {
+    -ms-overflow-style: none;
+}
+
+/* Fixed width columns */
+.lg\:w-1\/3 {
+    width: 33.333333%;
+}
+
+.lg\:w-2\/3 {
+    width: 66.666667%;
+}
+
+/* Prevent text overflow */
+.break-words {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.whitespace-pre-wrap {
+    white-space: pre-wrap;
+}
+
+/* Sticky sidebar */
+.lg\:sticky {
+    position: sticky;
+    top: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .lg\:sticky {
+        position: relative;
+        top: 0;
+    }
+    
+    .lg\:w-1\/3 {
+        height: auto;
+        overflow-y: visible;
+        scrollbar-width: auto;
+    }
+    
+    .lg\:w-1\/3::-webkit-scrollbar {
+        display: block;
+    }
+    
+    .lg\:w-1\/3, .lg\:w-2\/3 {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// ============ CSRF Token Helper ============
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+// ============ Show Toast ============
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? '#4CAF50' : type === 'error' ? '#EF5350' : '#FFC107';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    toast.className = `fixed bottom-4 right-4 z-50 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transform transition-all duration-300 translate-x-full`;
+    toast.style.backgroundColor = bgColor;
+    toast.innerHTML = `<i class="fas ${icon}"></i><span class="text-sm">${message}</span>`;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ============ Profile Picture Upload ============
+async function uploadProfilePicture(file) {
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File too large (max 5MB)', 'error');
+        return;
+    }
+    
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        showToast('Please select JPEG, PNG, GIF, or WebP image', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    
+    const button = document.querySelector('[onclick*="profile-picture-input"] ~ button') || document.querySelector('[onclick*="profile-picture-input"]');
+    if (button) {
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        try {
+            const response = await fetch('/profile/api/upload-profile-picture', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                location.reload();
+            } else {
+                throw new Error(data.message || 'Upload failed');
+            }
+        } catch (error) {
+            showToast(error.message, 'error');
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }
+    }
+}
+
+// ============ Friend Request Functions ============
+async function sendFriendRequest(userId) {
+    try {
+        const response = await fetch(`/profile/api/send-friend-request/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() }
+        });
+        const data = await response.json();
+        showToast(data.message, data.success ? 'success' : 'error');
+        if (data.success) setTimeout(() => location.reload(), 1500);
+    } catch (error) {
+        showToast('Failed to send request', 'error');
+    }
+}
+
+async function acceptFriendRequest(friendshipId) {
+    try {
+        const response = await fetch(`/profile/api/accept-friend-request/${friendshipId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() }
+        });
+        const data = await response.json();
+        showToast(data.message, 'success');
+        if (data.success) setTimeout(() => location.reload(), 1500);
+    } catch (error) {
+        showToast('Failed to accept request', 'error');
+    }
+}
+
+async function rejectFriendRequest(friendshipId) {
+    try {
+        const response = await fetch(`/profile/api/reject-friend-request/${friendshipId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() }
+        });
+        const data = await response.json();
+        showToast(data.message, 'info');
+        if (data.success) setTimeout(() => location.reload(), 1500);
+    } catch (error) {
+        showToast('Failed to reject request', 'error');
+    }
+}
+
+async function removeFriend(userId) {
+    if (!confirm('Are you sure you want to remove this friend?')) return;
+    try {
+        const response = await fetch(`/profile/api/remove-friend/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() }
+        });
+        const data = await response.json();
+        showToast(data.message, data.success ? 'success' : 'error');
+        if (data.success) setTimeout(() => location.reload(), 1500);
+    } catch (error) {
+        showToast('Failed to remove friend', 'error');
+    }
+}
+
+// ============ Message Button ============
+function startConversation(userId) {
+    window.location.href = `/messages/start_conversation/${userId}`;
+}
+
+// ============ Post Functions ============
+async function likePost(postId) {
+    try {
+        const response = await fetch(`/community/api/like/${postId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() }
+        });
+        const data = await response.json();
+        if (data.success) {
+            const likeIcon = document.getElementById(`like-icon-${postId}`);
+            const likeCount = document.getElementById(`like-count-${postId}`);
+            if (likeCount) likeCount.textContent = data.like_count;
+            if (likeIcon) {
+                if (data.liked) {
+                    likeIcon.classList.add('text-red-500');
+                } else {
+                    likeIcon.classList.remove('text-red-500');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error liking post:', error);
+    }
+}
+
+function toggleComments(postId) {
+    const section = document.getElementById(`comments-section-${postId}`);
+    if (section) {
+        section.classList.toggle('hidden');
+        if (!section.classList.contains('hidden')) loadComments(postId);
+    }
+}
+
+async function loadComments(postId) {
+    try {
+        const response = await fetch(`/community/api/comments/${postId}`);
+        const data = await response.json();
+        if (data.success) {
+            const list = document.getElementById(`comments-list-${postId}`);
+            if (!list) return;
+            list.innerHTML = '';
+            
+            if (data.comments.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-center py-4 text-sm">No comments yet</p>';
+                return;
+            }
+            
+            data.comments.forEach(comment => {
+                const div = document.createElement('div');
+                div.className = 'flex items-start gap-3 p-3 rounded-xl';
+                div.style.backgroundColor = '#F5F5F5';
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
+                        ${comment.author_avatar ? 
+                            `<img src="${comment.author_avatar}" class="w-full h-full rounded-full object-cover">` :
+                            comment.author_name.charAt(0).toUpperCase()
+                        }
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between flex-wrap gap-1">
+                            <span class="text-sm font-medium truncate" style="color: #212121;">${escapeHtml(comment.author_name)}</span>
+                            <span class="text-xs" style="color: #9E9E9E;">${comment.time_ago || 'Just now'}</span>
+                        </div>
+                        <p class="text-sm mt-1 break-words whitespace-pre-wrap" style="color: #424242;">${escapeHtml(comment.content)}</p>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading comments:', error);
+    }
+}
+
+async function addComment(event, postId) {
+    event.preventDefault();
+    const input = document.getElementById(`comment-input-${postId}`);
+    const content = input?.value.trim();
+    
+    if (!content) {
+        showToast('Please write a comment', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/community/post/${postId}/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCsrfToken() },
+            body: new URLSearchParams({ content: content })
+        });
+        const data = await response.json();
+        if (data.success) {
+            input.value = '';
+            loadComments(postId);
+            const commentBtn = document.querySelector(`[onclick="toggleComments(${postId})"] span`);
+            if (commentBtn) {
+                const count = parseInt(commentBtn.textContent) || 0;
+                commentBtn.textContent = count + 1;
+            }
+            showToast('Comment added!', 'success');
+        } else {
+            showToast(data.message || 'Error adding comment', 'error');
+        }
+    } catch (error) {
+        showToast('Error adding comment', 'error');
+    }
+}
+
+function sharePost(postId) {
+    const url = `${window.location.origin}/community/post/${postId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied to clipboard!', 'success');
+    }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Link copied to clipboard!', 'success');
+    });
+}
+
+// ============ Post Actions ============
+function togglePostActions(postId) {
+    const menu = document.getElementById(`post-actions-${postId}`);
+    if (!menu) return;
+    
+    document.querySelectorAll('[id^="post-actions-"]').forEach(other => {
+        if (other.id !== `post-actions-${postId}`) other.classList.add('hidden');
+    });
+    menu.classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="post-actions-"]') && !e.target.closest('[onclick*="togglePostActions"]')) {
+        document.querySelectorAll('[id^="post-actions-"]').forEach(menu => menu.classList.add('hidden'));
+    }
+});
+
+let currentEditingPostId = null;
+
+async function editPost(postId) {
+    try {
+        const response = await fetch(`/community/api/get_post/${postId}`);
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('editPostTitle').value = data.data.title || '';
+            document.getElementById('editPostContent').value = data.data.content;
+            currentEditingPostId = postId;
+            openEditPostModal();
+        }
+    } catch (error) {
+        showToast('Error loading post', 'error');
+    }
+}
+
+function openEditPostModal() {
+    const modal = document.getElementById('editPostModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeEditPostModal() {
+    const modal = document.getElementById('editPostModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    currentEditingPostId = null;
+}
+
+async function savePostChanges(event) {
+    if (event) event.preventDefault();
+    if (!currentEditingPostId) return;
+    
+    const title = document.getElementById('editPostTitle').value.trim();
+    const content = document.getElementById('editPostContent').value.trim();
+    
+    if (!content) {
+        showToast('Post content is required', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/community/api/edit_post/${currentEditingPostId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            body: JSON.stringify({ title: title, content: content })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Post updated!', 'success');
+            closeEditPostModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Error updating post', 'error');
+        }
+    } catch (error) {
+        showToast('Error updating post', 'error');
+    }
+}
+
+async function deletePost(postId) {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    try {
+        const response = await fetch(`/community/api/delete_post/${postId}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrfToken() }
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast('Post deleted', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Error deleting post', 'error');
+        }
+    } catch (error) {
+        showToast('Error deleting post', 'error');
+    }
+}
+
+function hidePost(postId) {
+    showToast('Post hidden', 'info');
+}
+
+function savePost(postId) {
+    showToast('Post saved to bookmarks', 'success');
+}
+
+// ============ Toggle Post Content (See More / See Less) ============
+function togglePostContent(postId) {
+    const shortContent = document.getElementById(`short-content-${postId}`);
+    const fullContent = document.getElementById(`full-content-${postId}`);
+    const toggleBtn = document.getElementById(`toggle-btn-${postId}`);
+    
+    if (shortContent && fullContent && toggleBtn) {
+        if (shortContent.style.display !== 'none') {
+            shortContent.style.display = 'none';
+            fullContent.style.display = 'inline';
+            toggleBtn.textContent = 'See less';
+        } else {
+            shortContent.style.display = 'inline';
+            fullContent.style.display = 'none';
+            toggleBtn.textContent = 'See more';
+        }
+    }
+}
+
+// ============ Create Post Functions (Kept for reference but not used) ============
+let currentMediaFile = null;
+
+function openCreatePostModal() {
+    // Function kept but no button triggers it
+    const modal = document.getElementById('createPostModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            const contentField = document.getElementById('postContent');
+            if (contentField) contentField.focus();
+        }, 100);
+    }
+}
+
+function closeCreatePostModal() {
+    const modal = document.getElementById('createPostModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    const form = document.getElementById('createPostForm');
+    if (form) form.reset();
+    const preview = document.getElementById('mediaPreview');
+    if (preview) preview.classList.add('hidden');
+    currentMediaFile = null;
+}
+
+function previewMedia(input) {
+    const file = input.files[0];
+    if (file) {
+        currentMediaFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('mediaPreview');
+            const img = document.getElementById('previewImage');
+            if (preview && img) {
+                img.src = e.target.result;
+                preview.classList.remove('hidden');
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeMedia() {
+    const fileInput = document.getElementById('postMedia');
+    if (fileInput) fileInput.value = '';
+    const preview = document.getElementById('mediaPreview');
+    if (preview) preview.classList.add('hidden');
+    currentMediaFile = null;
+}
+
+async function createPost(event) {
+    event.preventDefault();
+    
+    const title = document.getElementById('postTitle')?.value.trim() || '';
+    const content = document.getElementById('postContent')?.value.trim();
+    const mediaFile = document.getElementById('postMedia')?.files[0];
+    
+    if (!content) {
+        showToast('Please write some content', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('post_type', 'discussion');
+    if (mediaFile) formData.append('media_file', mediaFile);
+    
+    const submitBtn = document.getElementById('createPostSubmitBtn');
+    const originalHTML = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/profile/api/create_post', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Post created successfully!', 'success');
+            closeCreatePostModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Error creating post', 'error');
+            submitBtn.innerHTML = originalHTML;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error creating post: ' + error.message, 'error');
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.disabled = false;
+    }
+}
+
+// ============ Image Viewer ============
+function openImageViewer(src) {
+    const viewer = document.getElementById('imageViewer');
+    const img = document.getElementById('viewerImage');
+    if (viewer && img) {
+        img.src = src;
+        viewer.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeImageViewer() {
+    const viewer = document.getElementById('imageViewer');
+    if (viewer) {
+        viewer.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+// ============ Helper ============
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============ Close modals on ESC ============
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeCreatePostModal();
+        closeEditPostModal();
+        closeImageViewer();
+    }
+});
+
+function toggleContent(id) {
+    const short = document.getElementById(`short-${id}`);
+    const full = document.getElementById(`full-${id}`);
+    const btn = document.getElementById(`btn-${id}`);
+    if (short.style.display !== 'none') {
+        short.style.display = 'none';
+        full.style.display = 'inline';
+        btn.textContent = 'See less';
+    } else {
+        short.style.display = 'inline';
+        full.style.display = 'none';
+        btn.textContent = 'See more';
+    }
+}
+
+// ============ Click outside to close modals ============
+document.getElementById('createPostModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeCreatePostModal();
+});
+document.getElementById('editPostModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEditPostModal();
+});
+document.getElementById('imageViewer')?.addEventListener('click', function(e) {
+    if (e.target === this) closeImageViewer();
+});
+</script>
+{% endblock %}

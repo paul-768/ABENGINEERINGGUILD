@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-emerald-500 to-green-600">
+    <!-- Cute Header with Soft Green -->
+    <div class="bg-gradient-to-r from-green-400 to-emerald-400 shadow-lg relative overflow-hidden">
+        <!-- Cute floating circles decoration -->
+        <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+        <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+        <div class="absolute top-1/2 left-1/4 w-12 h-12 bg-white/5 rounded-full"></div>
+        <div class="absolute bottom-4 right-1/3 w-8 h-8 bg-white/5 rounded-full"></div>
+        
+        <div class="container mx-auto px-6 py-6 relative">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/25 rounded-2xl p-2.5 shadow-sm backdrop-blur-sm">
+                            <i class="fas fa-crown text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                                Admin Dashboard 
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-white/90 text-sm"></i>
+                        <span class="text-white font-medium text-sm">{{ now.strftime('%B %d, %Y') if now else '' }}</span>
+                        <i class="fas fa-sun text-yellow-200 text-sm ml-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Stats Grid - Solid Color Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+            <!-- Users Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-users text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-800">{{ total_users }}</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Total Users</p>
+                        <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            <i class="fas fa-arrow-up text-xs"></i> +{{ new_users_today }} today
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topics Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-folder text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-800">{{ total_topics }}</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Study Topics</p>
+                        <p class="text-xs text-gray-400 mt-1">Active learning areas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questions Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-question-circle text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-800">{{ total_questions }}</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Question Bank</p>
+                        <p class="text-xs text-gray-400 mt-1">Total quiz questions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quizzes Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-chart-bar text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-800">{{ total_quizzes }}</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Quizzes Taken</p>
+                        <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            <i class="fas fa-arrow-up text-xs"></i> +{{ quizzes_today }} today
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posts Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-pink-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-newspaper text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-800">{{ total_posts }}</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Community Posts</p>
+                        <p class="text-xs text-gray-400 mt-1">Discussions & questions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Announcements Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-bullhorn text-white text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-bold text-gray-800">{{ total_announcements }}</span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Announcements</p>
+                        <p class="text-xs text-gray-400 mt-1">Platform updates</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Recent Users Card -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-users text-blue-600 text-sm"></i>
+                                </div>
+                                Recent Users
+                            </h3>
+                            <p class="text-xs text-gray-400 mt-1 ml-10">Latest registered members</p>
+                        </div>
+                        <a href="{{ url_for('admin.manage_users') }}" 
+                           class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                            View all <i class="fas fa-arrow-right text-xs"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                        {% for user in recent_users %}
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-semibold">
+                                    {{ user.name[0]|upper }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">{{ user.name }}</p>
+                                    <p class="text-xs text-gray-500">{{ user.email[:30] }}{% if user.email|length > 30 %}...{% endif %}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-gray-400">{{ user.created_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-user-plus text-gray-400 text-2xl"></i>
+                            </div>
+                            <p class="text-gray-500">No users registered yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Quiz Activity Card -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-chart-line text-green-600 text-sm"></i>
+                                </div>
+                                Recent Quiz Activity
+                            </h3>
+                            <p class="text-xs text-gray-400 mt-1 ml-10">Latest quiz attempts</p>
+                        </div>
+                        <span class="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
+                            {{ recent_quizzes|length }} activities
+                        </span>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                        {% for quiz in recent_quizzes[:10] %}
+                        <div class="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user-check text-green-600 text-xs"></i>
+                                </div>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    {% if quiz.user %}{{ quiz.user.name }}{% else %}Unknown User{% endif %}
+                                </p>
+                                <span class="text-xs text-gray-400">•</span>
+                                <p class="text-xs text-gray-500 truncate">
+                                    {% if quiz.topic %}{{ quiz.topic.name }}{% else %}Unknown Topic{% endif %}
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-3 ml-8">
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                    <span class="text-sm font-bold 
+                                        {% if quiz.score >= 80 %}text-green-600
+                                        {% elif quiz.score >= 60 %}text-yellow-600
+                                        {% else %}text-red-600{% endif %}">
+                                        {{ "%.1f"|format(quiz.score) }}%
+                                    </span>
+                                </div>
+                                <div class="flex-1 max-w-[120px] bg-gray-200 rounded-full h-1.5">
+                                    <div class="rounded-full h-1.5 
+                                        {% if quiz.score >= 80 %}bg-green-500
+                                        {% elif quiz.score >= 60 %}bg-yellow-500
+                                        {% else %}bg-red-500{% endif %}" 
+                                        style="width: {{ quiz.score }}%">
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-400">
+                                    {{ quiz.completed_at.strftime('%b %d, %H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-clipboard-list text-gray-400 text-2xl"></i>
+                            </div>
+                            <p class="text-gray-500">No quizzes taken yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Management Section -->
+        <div>
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <div class="w-10 h-10 bg-gray-700 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-cog text-white text-sm"></i>
+                        </div>
+                        Quick Management
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1 ml-12">Access key administrative features</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Manage Users -->
+                <a href="{{ url_for('admin.manage_users') }}" 
+                   class="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 block">
+                    <div class="p-6">
+                        <div class="w-14 h-14 bg-blue-500 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-600 transition">
+                            <i class="fas fa-users text-white text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition">Manage Users</h4>
+                        <p class="text-sm text-gray-500 mt-1">View, edit, and manage user accounts</p>
+                        <div class="mt-4 flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
+                            <span>Access panel</span>
+                            <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Manage Questions -->
+                <a href="{{ url_for('admin.manage_questions') }}" 
+                   class="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 block">
+                    <div class="p-6">
+                        <div class="w-14 h-14 bg-purple-500 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-600 transition">
+                            <i class="fas fa-question-circle text-white text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition">Manage Questions</h4>
+                        <p class="text-sm text-gray-500 mt-1">Add, edit, and organize quiz questions</p>
+                        <div class="mt-4 flex items-center text-purple-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
+                            <span>Access panel</span>
+                            <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Manage Study Material Links -->
+                <a href="{{ url_for('admin.manage_material_links') }}" 
+                   class="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 block">
+                    <div class="p-6">
+                        <div class="w-14 h-14 bg-green-500 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-600 transition">
+                            <i class="fas fa-book-open text-white text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-800 group-hover:text-green-600 transition">Manage Study Material Links</h4>
+                        <p class="text-sm text-gray-500 mt-1">Edit Google Drive & YouTube links for study materials</p>
+                        <div class="mt-4 flex items-center text-green-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
+                            <span>Access panel</span>
+                            <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Manage Announcements -->
+                <a href="{{ url_for('admin.manage_announcements') }}" 
+                   class="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 block">
+                    <div class="p-6">
+                        <div class="w-14 h-14 bg-indigo-500 rounded-xl flex items-center justify-center mb-4 group-hover:bg-indigo-600 transition">
+                            <i class="fas fa-bullhorn text-white text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition">Manage Announcements</h4>
+                        <p class="text-sm text-gray-500 mt-1">Post and manage platform announcements</p>
+                        <div class="mt-4 flex items-center text-indigo-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition">
+                            <span>Access panel</span>
+                            <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom Scrollbar Styles */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+{% endblock %}

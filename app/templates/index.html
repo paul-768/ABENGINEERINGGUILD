@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-peach-50">
+    <div class="card p-8 w-full max-w-md text-center border-0 shadow-xl">
+        <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-seedling text-purple-600 text-3xl"></i>
+        </div>
+        
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">AgriQuest</h1>
+        <p class="text-gray-600 mb-6">Interactive reviewer for Agricultural and Biosystems Engineering students</p>
+        
+        <div class="space-y-4">
+            <a href="{{ url_for('auth.login') }}" 
+               class="block w-full btn-primary text-lg py-3">
+                Login
+            </a>
+            <a href="{{ url_for('auth.register') }}" 
+               class="block w-full bg-white hover:bg-gray-50 text-purple-600 border border-purple-200 py-3 px-4 rounded-lg font-bold text-lg transition-all hover:shadow-md">
+                Register
+            </a>
+        </div>
+        
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <p class="text-sm text-gray-500">© 2025 AgriQuest. All rights reserved.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

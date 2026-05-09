@@ -1,0 +1,148 @@
+<!-- app/templates/messages/no_conversations.html - Empty State -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Sidebar with Search and All Contacts -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-users mr-2 text-green-600"></i> Contacts
+                </h4>
+                <div class="text-center py-8">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-comments text-gray-400"></i>
+                    </div>
+                    <p class="text-gray-500 text-sm">No contacts yet</p>
+                    <button onclick="openNewMessageModal()" class="mt-2 text-green-600 text-sm hover:underline">
+                        Start a conversation
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Chat Area - Empty State -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-comment-dots text-gray-400 text-4xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No messages yet</h3>
+                <p class="text-gray-500">Start a conversation with your peers!</p>
+                <button onclick="openNewMessageModal()" class="mt-4 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all shadow-sm">
+                    <i class="fas fa-plus mr-2"></i> New Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Message Modal -->
+<div id="newMessageModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full">
+        <div class="p-5 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900">New Message</h3>
+                <button onclick="closeNewMessageModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <input type="text" id="search-user-input" 
+                       placeholder="Search by name or email..." 
+                       class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            </div>
+            <div id="search-results" class="max-h-64 overflow-y-auto space-y-2 custom-scrollbar"></div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="closeNewMessageModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openNewMessageModal() {
+    document.getElementById('newMessageModal').classList.remove('hidden');
+    document.getElementById('search-user-input').focus();
+    document.getElementById('search-results').innerHTML = '';
+}
+
+function closeNewMessageModal() {
+    document.getElementById('newMessageModal').classList.add('hidden');
+    document.getElementById('search-user-input').value = '';
+}
+
+let searchTimeout;
+document.getElementById('search-user-input').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+        document.getElementById('search-results').innerHTML = '';
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        fetch(`/messages/search_users?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('search-results');
+                if (data.users.length === 0) {
+                    resultsDiv.innerHTML = '<p class="text-center text-gray-500 py-4">No users found</p>';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = data.users.map(user => `
+                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-600 to-green-700 flex items-center justify-center text-white font-bold">
+                                ${escapeHtml(user.name.charAt(0).toUpperCase())}
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">${escapeHtml(user.name)}</p>
+                                <p class="text-xs text-gray-500">${escapeHtml(user.email)}</p>
+                            </div>
+                        </div>
+                        <a href="/messages/start_conversation/${user.id}" 
+                           class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                            Message
+                        </a>
+                    </div>
+                `).join('');
+            })
+            .catch(error => console.error('Error searching users:', error));
+    }, 300);
+});
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeNewMessageModal();
+    }
+});
+</script>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen" style="background-color: #F5F5F5;">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Main Card -->
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden" style="border: 1px solid #E0E0E0;">
+            
+            <!-- Header -->
+            <div class="px-6 py-5 border-b" style="border-color: #E8F5E9; background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: #E8F5E9;">
+                        <i class="fas fa-user-edit text-xl" style="color: #4CAF50;"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold" style="color: #212121;">Edit Profile</h1>
+                        <p class="text-sm mt-0.5" style="color: #757575;">Update your personal information</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                
+                <!-- PROFILE PICTURE SECTION -->
+                <div class="mb-8 pb-6 border-b" style="border-color: #F0F0F0;">
+                    <h3 class="text-lg font-semibold mb-5 flex items-center gap-2" style="color: #212121;">
+                        <i class="fas fa-camera" style="color: #4CAF50;"></i> Profile Picture
+                    </h3>
+                    <div class="flex flex-col sm:flex-row items-center gap-6">
+                        <!-- Avatar -->
+                        <div class="relative">
+                            <div class="w-28 h-28 rounded-full overflow-hidden shadow-md" style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
+                                {% if current_user.profile_picture and current_user.profile_picture != 'default_profile.png' %}
+                                <img src="{{ url_for('static', filename='uploads/profile_pictures/' + current_user.profile_picture) }}" 
+                                     class="w-full h-full object-cover" 
+                                     alt="Profile Picture"
+                                     id="profile-preview">
+                                {% else %}
+                                <div class="w-full h-full flex items-center justify-center">
+                                    <span class="text-white text-3xl font-bold">{{ current_user.name[0]|upper if current_user.name else 'U' }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <button type="button" 
+                                    onclick="document.getElementById('profile-picture-input').click()"
+                                    class="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-105"
+                                    style="background-color: #FFC107;">
+                                <i class="fas fa-camera text-white text-xs"></i>
+                            </button>
+                            <input type="file" 
+                                   id="profile-picture-input" 
+                                   accept="image/*" 
+                                   class="hidden"
+                                   onchange="uploadProfilePicture(this.files[0])">
+                        </div>
+                        
+                        <div class="text-center sm:text-left">
+                            <p class="text-sm font-medium mb-1" style="color: #424242;">Upload a new profile picture</p>
+                            <p class="text-xs" style="color: #9E9E9E;">JPG, PNG or GIF. Max 5MB.</p>
+                            <button type="button" 
+                                    onclick="document.getElementById('profile-picture-input').click()"
+                                    class="mt-2 text-sm px-3 py-1 rounded-full transition-colors inline-flex items-center gap-1"
+                                    style="background-color: #E8F5E9; color: #4CAF50;">
+                                <i class="fas fa-upload text-xs"></i> Choose Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BASIC INFORMATION SECTION -->
+                <div class="mb-8 pb-6 border-b" style="border-color: #F0F0F0;">
+                    <h3 class="text-lg font-semibold mb-5 flex items-center gap-2" style="color: #212121;">
+                        <i class="fas fa-info-circle" style="color: #4CAF50;"></i> Basic Information
+                    </h3>
+                    
+                    <form method="POST" class="space-y-5">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Full Name -->
+                            <div>
+                                <label class="block text-sm font-medium mb-1.5" style="color: #424242;">
+                                    <i class="fas fa-user mr-1" style="color: #4CAF50;"></i> Full Name <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.name(class="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2 transition-all", style="border-color: #E0E0E0;") }}
+                                {% if form.name.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ form.name.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Email (readonly) -->
+                            <div>
+                                <label class="block text-sm font-medium mb-1.5" style="color: #424242;">
+                                    <i class="fas fa-envelope mr-1" style="color: #4CAF50;"></i> Email Address
+                                </label>
+                                <input type="email" 
+                                       value="{{ current_user.email }}" 
+                                       class="w-full px-4 py-2.5 rounded-xl border bg-gray-50 cursor-not-allowed"
+                                       style="border-color: #E0E0E0; color: #9E9E9E;"
+                                       readonly>
+                                <p class="text-xs mt-1" style="color: #9E9E9E;">Email cannot be changed</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Bio -->
+                        <div>
+                            <label class="block text-sm font-medium mb-1.5" style="color: #424242;">
+                                <i class="fas fa-align-left mr-1" style="color: #4CAF50;"></i> Bio
+                            </label>
+                            {{ form.bio(rows=4, class="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2 transition-all resize-none", style="border-color: #E0E0E0;", placeholder="Tell us about yourself...") }}
+                            <div class="flex justify-between items-center mt-1">
+                                <p class="text-xs" style="color: #9E9E9E;">Share your background, interests, or what you're studying</p>
+                                <p class="text-xs font-medium" style="color: #4CAF50;" id="bio-char-count">{{ form.bio.data|length if form.bio.data else 0 }}/500</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Location -->
+                            <div>
+                                <label class="block text-sm font-medium mb-1.5" style="color: #424242;">
+                                    <i class="fas fa-map-marker-alt mr-1" style="color: #4CAF50;"></i> Location
+                                </label>
+                                {{ form.location(class="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2 transition-all", style="border-color: #E0E0E0;", placeholder="e.g., Manila, Philippines") }}
+                            </div>
+                            
+                            <!-- Website -->
+                            <div>
+                                <label class="block text-sm font-medium mb-1.5" style="color: #424242;">
+                                    <i class="fas fa-globe mr-1" style="color: #4CAF50;"></i> Website
+                                </label>
+                                {{ form.website(class="w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2 transition-all", style="border-color: #E0E0E0;", placeholder="https://example.com") }}
+                                {% if form.website.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ form.website.errors[0] }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end gap-3 pt-4">
+                            <a href="{{ url_for('profile.view_profile', user_id=current_user.id) }}" 
+                               class="px-5 py-2.5 rounded-xl font-medium transition-all hover:bg-gray-100 flex items-center gap-2"
+                               style="background-color: #F5F5F5; color: #616161;">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" 
+                                    class="px-5 py-2.5 rounded-xl font-medium transition-all hover:shadow-md flex items-center gap-2"
+                                    style="background-color: #4CAF50; color: white;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- ACCOUNT SECURITY SECTION -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-5 flex items-center gap-2" style="color: #212121;">
+                        <i class="fas fa-shield-alt" style="color: #4CAF50;"></i> Account Security
+                    </h3>
+                    
+                    <!-- Change Password Card -->
+                    <div class="rounded-xl p-5" style="background-color: #F8F9FA; border: 1px solid #E8F5E9;">
+                        <div class="flex items-center justify-between flex-wrap gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background-color: #E8F5E9;">
+                                    <i class="fas fa-key" style="color: #4CAF50;"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold" style="color: #212121;">Change Password</h4>
+                                    <p class="text-xs" style="color: #757575;">Update your password regularly to keep your account secure</p>
+                                </div>
+                            </div>
+                            <button onclick="openChangePasswordModal()" 
+                                    class="px-4 py-2 rounded-full text-sm font-medium transition-all hover:shadow-md flex items-center gap-2"
+                                    style="background-color: #FFC107; color: #212121;">
+                                <i class="fas fa-lock"></i> Change Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal - Sleeker and More Compact -->
+<div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden transition-all duration-300">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 transform transition-all duration-300 scale-95">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center px-5 py-3 border-b" style="border-color: #E8F5E9;">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center" style="background-color: #E8F5E9;">
+                    <i class="fas fa-key text-sm" style="color: #4CAF50;"></i>
+                </div>
+                <h3 class="font-semibold text-base" style="color: #212121;">Change Password</h3>
+            </div>
+            <button onclick="closeChangePasswordModal()" class="text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="px-5 py-4">
+            <form id="changePasswordForm">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: #424242;">Current Password</label>
+                        <input type="password" id="currentPassword" required
+                               class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all text-sm"
+                               style="border-color: #E0E0E0; focus:ring-color: #4CAF50;" placeholder="Enter current password">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: #424242;">New Password</label>
+                        <input type="password" id="newPassword" required
+                               class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all text-sm"
+                               style="border-color: #E0E0E0; focus:ring-color: #4CAF50;" placeholder="Enter new password">
+                        <p class="text-[10px] mt-0.5" style="color: #9E9E9E;">Minimum 6 characters</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: #424242;">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" required
+                               class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all text-sm"
+                               style="border-color: #E0E0E0; focus:ring-color: #4CAF50;" placeholder="Confirm new password">
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="flex justify-end gap-2 mt-5 pt-3 border-t" style="border-color: #F0F0F0;">
+                    <button type="button" onclick="closeChangePasswordModal()" 
+                            class="px-3 py-1.5 text-xs rounded-lg transition-colors font-medium"
+                            style="background-color: #F5F5F5; color: #616161;">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-3 py-1.5 text-xs rounded-lg font-medium transition-all hover:shadow-sm flex items-center gap-1"
+                            style="background-color: #4CAF50; color: white;">
+                        <i class="fas fa-check text-[10px]"></i> Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Bio character counter
+const bioTextarea = document.querySelector('#bio');
+if (bioTextarea) {
+    const charCount = document.getElementById('bio-char-count');
+    bioTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = `${length}/500`;
+        if (length > 500) {
+            charCount.style.color = '#EF5350';
+        } else {
+            charCount.style.color = '#4CAF50';
+        }
+    });
+}
+
+// CSRF Token Helper
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+// Show Toast Notification
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? '#4CAF50' : type === 'error' ? '#EF5350' : '#FFC107';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    toast.className = `fixed bottom-4 right-4 z-50 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full`;
+    toast.style.backgroundColor = bgColor;
+    toast.innerHTML = `<i class="fas ${icon}"></i><span class="text-sm font-medium">${message}</span>`;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ============ Profile Picture Upload ============
+async function uploadProfilePicture(file) {
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File too large (max 5MB)', 'error');
+        return;
+    }
+    
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        showToast('Please select JPEG, PNG, GIF, or WebP image', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    
+    const button = document.querySelector('[onclick*="profile-picture-input"]');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/profile/api/upload-profile-picture', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            updateProfilePicture(data.file_url);
+            showToast('Profile picture updated!', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            throw new Error(data.message || 'Upload failed');
+        }
+    } catch (error) {
+        showToast(error.message, 'error');
+        button.innerHTML = originalHTML;
+        button.disabled = false;
+    }
+}
+
+function updateProfilePicture(imageUrl) {
+    let preview = document.getElementById('profile-preview');
+    if (preview) {
+        preview.src = imageUrl + '?t=' + new Date().getTime();
+    } else {
+        const container = document.querySelector('.w-28.h-28');
+        if (container) {
+            container.innerHTML = `<img src="${imageUrl}" class="w-full h-full object-cover" id="profile-preview">`;
+        }
+    }
+}
+
+// ============ Change Password ============
+function openChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        const modalContent = modal.querySelector('.bg-white');
+        if (modalContent) {
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+    }, 10);
+    document.getElementById('changePasswordForm').reset();
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('changePasswordModal');
+    const modalContent = modal.querySelector('.bg-white');
+    if (modalContent) {
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+    }
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+}
+
+document.getElementById('changePasswordForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        showToast('New passwords do not match', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        return;
+    }
+    
+    if (currentPassword === newPassword) {
+        showToast('New password must be different from current password', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword,
+                confirm_password: confirmPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Password changed successfully!', 'success');
+            closeChangePasswordModal();
+        } else {
+            showToast(data.message || 'Failed to change password', 'error');
+        }
+    } catch (error) {
+        showToast('An error occurred. Please try again.', 'error');
+    }
+});
+
+// Close modal on ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeChangePasswordModal();
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('changePasswordModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeChangePasswordModal();
+    }
+});
+</script>
+
+<style>
+/* Focus ring styles */
+input:focus, textarea:focus, select:focus {
+    ring-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+/* Smooth transitions */
+button, a {
+    transition: all 0.2s ease;
+}
+
+/* Custom scrollbar for textarea */
+textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+textarea::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

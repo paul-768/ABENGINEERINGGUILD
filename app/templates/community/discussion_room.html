@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-full">
+    <!-- Fixed Frame - 84% height, centered -->
+    <div class="w-full max-w-7xl mx-auto px-4" style="height: 84vh;">
+        <div class="bg-gray-50 rounded-2xl shadow-lg flex flex-col h-full overflow-hidden">
+            
+            <!-- Two Column Layout -->
+            <div class="flex flex-1 overflow-hidden">
+                
+                <!-- LEFT SIDEBAR - Other Rooms (Scrollable) -->
+                <div class="w-80 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
+                        <a href="{{ url_for('community.discussion_rooms') }}" 
+                           class="inline-flex items-center text-green-600 hover:text-green-700 font-medium mb-3 transition-colors text-sm">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Rooms
+                        </a>
+                        <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <i class="fas fa-comments mr-2 text-green-600"></i>
+                            <span class="text-green-800">Discussion Rooms</span>
+                            <span class="ml-2 text-xs text-gray-400">· {{ other_rooms|length + 1 }}</span>
+                        </h4>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="search-rooms" 
+                                   placeholder="Search rooms..." 
+                                   class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white">
+                        </div>
+                    </div>
+                    
+                    <!-- Rooms List - Scrollable (max-h calc) -->
+                    <div id="rooms-list" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                        <!-- Current Room (highlighted) -->
+                        <div class="room-item rounded-lg transition-all duration-200 bg-green-50 border border-green-200" data-room-name="{{ room.name.lower() }}">
+                            <div class="block p-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                        <div class="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                                            <i class="fas fa-comment-dots text-sm"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm font-semibold text-green-700 truncate max-w-[120px]">{{ room.name }}</span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 truncate mt-0.5">{{ room.description[:40] }}{% if room.description|length > 40 %}...{% endif %}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full flex-shrink-0">{{ room.member_count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Other Rooms -->
+                        {% for other in other_rooms %}
+                        <div class="room-item rounded-lg transition-all duration-200 hover:bg-gray-50" data-room-name="{{ other.name.lower() }}">
+                            <a href="{{ url_for('community.discussion_room', room_id=other.id) }}" class="block p-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                        <div class="w-9 h-9 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                                            <i class="fas fa-hashtag text-sm"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-sm font-medium text-gray-700 truncate max-w-[120px]">{{ other.name }}</span>
+                                            </div>
+                                            <p class="text-xs text-gray-400 truncate mt-0.5">{{ other.description[:40] }}{% if other.description|length > 40 %}...{% endif %}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0">{{ other.member_count }}</span>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- RIGHT SIDE - Chat Area -->
+                <div class="flex-1 flex flex-col overflow-hidden bg-white">
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-600 to-green-700 flex items-center justify-center text-white shadow-sm">
+                                    <i class="fas fa-comment-dots text-lg"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-900">{{ room.name }}</h2>
+                                    <p class="text-xs text-gray-500">{{ room.description }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 bg-gray-100 px-3 py-1.5 rounded-full">
+                                <i class="fas fa-users text-green-600 text-xs"></i>
+                                <span id="member-count" class="text-xs text-gray-600 font-medium">{{ room.member_count }} members</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages Container -->
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 custom-scrollbar">
+                        {% for message in messages %}
+                        <div class="flex {% if message.sender_id == current_user.id %}justify-end{% endif %} message-item group" data-message-id="{{ message.id }}" data-sender-id="{{ message.sender_id }}">
+                            <div class="flex items-start space-x-2 max-w-[70%] {% if message.sender_id == current_user.id %}flex-row-reverse space-x-reverse{% endif %}">
+                                {% if message.sender_id != current_user.id %}
+                                <a href="{{ url_for('profile.view_profile', user_id=message.sender.id) }}" class="flex-shrink-0">
+                                    <div class="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-white text-xs shadow-sm">
+                                        {% if message.sender.profile_picture and message.sender.profile_picture != 'default_profile.png' %}
+                                        <img src="{{ url_for('static', filename='uploads/profile_pictures/' + message.sender.profile_picture) }}" 
+                                             class="w-full h-full rounded-full object-cover">
+                                        {% else %}
+                                        {{ message.sender.name[0]|upper }}
+                                        {% endif %}
+                                    </div>
+                                </a>
+                                {% endif %}
+                                <div>
+                                    {% if message.sender_id != current_user.id %}
+                                    <p class="text-xs text-gray-500 mb-0.5 ml-1">{{ message.sender.name }}</p>
+                                    {% endif %}
+                                    <div class="px-3 py-2 rounded-lg {% if message.sender_id == current_user.id %}bg-green-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-700 shadow-sm{% endif %} relative">
+                                        <div id="message-content-{{ message.id }}" class="message-content-view">
+                                            {% if message.message_type == 'image' %}
+                                                <img src="{{ url_for('static', filename='uploads/group_messages/' + message.file_path) }}" 
+                                                     class="max-w-xs rounded-lg cursor-pointer" 
+                                                     onclick="openImageViewer(this.src)">
+                                            {% elif message.message_type == 'file' %}
+                                                <a href="{{ url_for('static', filename='uploads/group_messages/' + message.file_path) }}" 
+                                                   class="flex items-center space-x-2 text-sm" download>
+                                                    <i class="fas fa-file-alt text-lg"></i>
+                                                    <span>{{ message.file_name }}</span>
+                                                    <span class="text-xs opacity-70">({{ (message.file_size / 1024)|round|int }} KB)</span>
+                                                </a>
+                                            {% else %}
+    <p class="text-sm whitespace-pre-wrap break-words" style="word-break: break-word; overflow-wrap: break-word;">{{ message.content }}</p>
+{% endif %}
+                                        </div>
+                                        <div id="message-edit-{{ message.id }}" class="message-edit-view hidden mt-1">
+                                            <textarea id="edit-text-{{ message.id }}" class="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500" rows="2">{{ message.content }}</textarea>
+                                            <div class="flex gap-2 mt-1">
+                                                <button onclick="saveMessageEdit({{ message.id }})" class="px-2 py-1 bg-green-500 text-white rounded text-xs">Save</button>
+                                                <button onclick="cancelMessageEdit({{ message.id }})" class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">Cancel</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-1 ml-1">{{ message.created_at.strftime('%I:%M %p') }}</p>
+                                </div>
+                                {% if message.sender_id == current_user.id %}
+                                <div class="message-menu flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="editMessage({{ message.id }})" class="text-gray-400 hover:text-blue-500 transition text-sm p-1" title="Edit message">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </button>
+                                    <button onclick="deleteMessage({{ message.id }})" class="text-gray-400 hover:text-red-500 transition text-sm p-1" title="Delete message">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12 text-gray-400">
+                            <i class="fas fa-comment-dots text-4xl mb-2 text-green-300"></i>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Typing Indicator -->
+                    <div id="typing-indicator" class="hidden px-4 py-2 text-xs text-gray-500 italic bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                        <div class="flex items-center space-x-2">
+                            <span>Someone is typing</span>
+                            <div class="typing-dots flex space-x-1">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0s"></span>
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="p-3 border-t border-gray-200 bg-white flex-shrink-0 relative">
+                        <div class="flex space-x-2">
+                            <button id="emoji-button" class="px-3 py-2 rounded-xl hover:bg-green-50 text-gray-500 hover:text-green-600 transition-colors">
+                                <i class="far fa-smile-wink text-xl"></i>
+                            </button>
+                            <button id="attach-button" class="px-3 py-2 rounded-xl hover:bg-green-50 text-gray-500 hover:text-green-600 transition-colors">
+                                <i class="fas fa-paperclip text-xl"></i>
+                            </button>
+                            <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,.txt">
+                            <textarea id="message-input" 
+                                      placeholder="Type your message..." 
+                                      autocomplete="off"
+                                      rows="1"
+                                      class="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 bg-white resize-none"
+                                      style="min-height: 42px; max-height: 100px;"></textarea>
+                            <button id="send-button" 
+                                    class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all shadow-sm">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                        
+                        <!-- Emoji Picker -->
+                        <div id="emoji-picker" class="hidden absolute bottom-full left-0 mb-2 w-96 bg-white border border-green-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                            <div class="p-3 border-b border-green-200 bg-white">
+                                <div class="flex flex-wrap gap-1 mb-3">
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="all">All</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="smiles">😊 Smiles</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="gestures">👍 Gestures</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="hearts">❤️ Hearts</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="animals">🐶 Animals</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="food">🍕 Food</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="sports">⚽ Sports</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="travel">✈️ Travel</button>
+                                </div>
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                                    <input type="text" id="emoji-search" placeholder="Search emojis..." 
+                                           class="w-full pl-9 pr-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                                </div>
+                            </div>
+                            <div id="emoji-grid" class="emoji-grid p-3 max-h-64 overflow-y-auto bg-white"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="imageViewer" class="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 hidden">
+    <button onclick="closeImageViewer()" class="absolute top-4 right-4 text-white text-2xl hover:opacity-75">&times;</button>
+    <img id="viewerImage" class="max-w-full max-h-full object-contain">
+</div>
+
+<script>
+const roomId = {{ room.id }};
+const currentUserId = {{ current_user.id }};
+let lastMessageId = {{ messages[-1].id if messages else 0 }};
+let pollingInterval = null;
+let emojiPickerVisible = false;
+
+function checkIfWithinEditWindow(createdAt) {
+    if (!createdAt) return false;
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMinutes = (now - created) / 1000 / 60;
+    return diffMinutes <= 5;
+}
+
+function editMessage(messageId) {
+    const viewDiv = document.getElementById(`message-content-${messageId}`);
+    const editDiv = document.getElementById(`message-edit-${messageId}`);
+    if (viewDiv && editDiv) {
+        viewDiv.classList.add('hidden');
+        editDiv.classList.remove('hidden');
+        const textarea = document.getElementById(`edit-text-${messageId}`);
+        if (textarea) {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+    }
+}
+
+function cancelMessageEdit(messageId) {
+    const viewDiv = document.getElementById(`message-content-${messageId}`);
+    const editDiv = document.getElementById(`message-edit-${messageId}`);
+    if (viewDiv && editDiv) {
+        viewDiv.classList.remove('hidden');
+        editDiv.classList.add('hidden');
+    }
+}
+
+async function saveMessageEdit(messageId) {
+    const textarea = document.getElementById(`edit-text-${messageId}`);
+    const newContent = textarea.value.trim();
+    
+    if (!newContent) {
+        showToast('Message cannot be empty', 'error');
+        return;
+    }
+    
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
+        const response = await fetch(`/community/api/message/${messageId}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ content: newContent })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const contentDiv = document.querySelector(`#message-content-${messageId} p`);
+            if (contentDiv) {
+                contentDiv.innerHTML = escapeHtml(newContent);
+            }
+            cancelMessageEdit(messageId);
+            showToast('Message updated', 'success');
+        } else {
+            showToast(data.message || 'Failed to edit message', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to edit message', 'error');
+    }
+}
+
+async function deleteMessage(messageId) {
+    if (!confirm('Are you sure you want to delete this message? This cannot be undone.')) return;
+    
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
+        const response = await fetch(`/community/api/message/${messageId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const messageElement = document.querySelector(`.message-item[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                messageElement.style.transition = 'opacity 0.3s ease';
+                messageElement.style.opacity = '0';
+                setTimeout(() => messageElement.remove(), 300);
+            }
+            showToast('Message deleted', 'success');
+        } else {
+            showToast(data.message || 'Failed to delete message', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to delete message', 'error');
+    }
+}
+
+// ============ EMOJI DATA ============
+const emojiList = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃',
+    '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👆', '👇', '👉', '👈', '🙌', '👏', '🙏', '💪', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '💖', '💗', '💓', '💕', '💘', '💝',
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐴', '🐺', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🐙', '🦑', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈',
+    '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌽', '🥕', '🥔', '🍠', '🍞', '🥖', '🥨', '🧀', '🍔', '🍟', '🍕', '🌮', '🌯', '🥗', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🍤', '🍙', '🍚', '🍘', '🍥', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '☕', '🍵', '🥤', '🍺', '🍻', '🥂', '🥃',
+    '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🏓', '🏸', '🏒', '🏑', '🎿', '🏂', '🏋️', '🤼', '🤸', '🤾', '🏌️', '🏇', '🏄', '🏊', '🚣', '🧗', '🚴', '🚵', '🏆', '🥇', '🥈', '🥉', '🏅',
+    '🚗', '🚕', '🚙', '🚌', '🚎', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '✈️', '🚀', '🛸', '🚁', '⛵', '🚤', '🛥️', '🛳️', '🚢', '🚉', '🚂', '🚆', '🚇', '🏠', '🏡', '🏢', '🏣', '🏤', '🏥', '🏦', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭'
+];
+
+function renderEmojiGrid(searchTerm = '') {
+    const grid = document.getElementById('emoji-grid');
+    if (!grid) return;
+    
+    let emojis = emojiList;
+    if (searchTerm) {
+        emojis = emojiList.filter(emoji => emoji.includes(searchTerm));
+    }
+    
+    grid.innerHTML = emojis.map(emoji => 
+        `<button class="emoji-item w-10 h-10 hover:bg-green-100 rounded-lg transition-colors text-xl flex items-center justify-center" onclick="insertEmoji('${emoji}')">${emoji}</button>`
+    ).join('');
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('message-input');
+    if (input) {
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        input.value = text.substring(0, start) + emoji + text.substring(end);
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+        autoResizeTextarea();
+    }
+    document.getElementById('emoji-picker').classList.add('hidden');
+    emojiPickerVisible = false;
+}
+
+function autoResizeTextarea() {
+    const textarea = document.getElementById('message-input');
+    if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+    }
+}
+
+// ============ CHAT FUNCTIONS ============
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white text-sm z-50 ${type === 'success' ? 'bg-green-600' : 'bg-red-500'}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function appendMessage(msg) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+    
+    const isOwn = msg.sender_id === currentUserId;
+    const timeAgo = msg.formatted_time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const canEdit = checkIfWithinEditWindow(msg.created_at);
+    
+    let contentHtml = '';
+    if (msg.message_type === 'image') {
+        contentHtml = `<img src="/static/uploads/group_messages/${msg.file_path}" class="max-w-xs rounded-lg cursor-pointer" onclick="openImageViewer(this.src)">`;
+    } else if (msg.message_type === 'file') {
+        contentHtml = `<a href="/static/uploads/group_messages/${msg.file_path}" class="flex items-center space-x-2 text-sm" download>
+                        <i class="fas fa-file-alt text-lg"></i>
+                        <span>${escapeHtml(msg.file_name)}</span>
+                      </a>`;
+    } else {
+        contentHtml = `
+            <div id="message-content-${msg.id}" class="message-content-view">
+                <p class="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere" style="word-break: break-word; overflow-wrap: break-word;">${escapeHtml(msg.content)}</p>
+            </div>
+            ${canEdit ? `
+            <div id="message-edit-${msg.id}" class="message-edit-view hidden mt-1">
+                <textarea id="edit-text-${msg.id}" class="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500" rows="2">${escapeHtml(msg.content)}</textarea>
+                <div class="flex gap-2 mt-1">
+                    <button onclick="saveMessageEdit(${msg.id})" class="px-2 py-1 bg-green-500 text-white rounded text-xs">Save</button>
+                    <button onclick="cancelMessageEdit(${msg.id})" class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">Cancel</button>
+                </div>
+            </div>
+            ` : ''}
+        `;
+    }
+    
+    const div = document.createElement('div');
+    div.className = `flex ${isOwn ? 'justify-end' : ''} message-item group`;
+    div.setAttribute('data-message-id', msg.id);
+    div.setAttribute('data-sender-id', msg.sender_id);
+    div.setAttribute('data-created-at', msg.created_at);
+    
+    div.innerHTML = `
+        <div class="flex items-start space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}">
+            ${!isOwn ? `
+            <a href="/profile/${msg.sender_id}" class="flex-shrink-0">
+                <div class="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-white text-xs shadow-sm">
+                    ${msg.sender_avatar ? `<img src="${msg.sender_avatar}" class="w-full h-full rounded-full object-cover">` : (msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : 'U')}
+                </div>
+            </a>
+            ` : ''}
+            <div>
+                ${!isOwn ? `<p class="text-xs text-gray-500 mb-0.5 ml-1">${escapeHtml(msg.sender_name)}</p>` : ''}
+                <div class="px-3 py-2 rounded-lg ${isOwn ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700'} shadow-sm">
+                    ${contentHtml}
+                </div>
+                <p class="text-xs text-gray-400 mt-1 ml-1">${msg.formatted_time || timeAgo}</p>
+            </div>
+            ${isOwn && canEdit ? `
+            <div class="message-menu flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="editMessage(${msg.id})" class="text-gray-400 hover:text-blue-500 transition text-sm p-1" title="Edit message">
+                    <i class="fas fa-pencil-alt text-xs"></i>
+                </button>
+                <button onclick="deleteMessage(${msg.id})" class="text-gray-400 hover:text-red-500 transition text-sm p-1" title="Delete message">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    const noMessagesDiv = container.querySelector('.text-center.py-12');
+    if (noMessagesDiv && container.children.length === 1) {
+        noMessagesDiv.remove();
+    }
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('message-input');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    const btn = document.getElementById('send-button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
+        const response = await fetch(`/community/api/room/${roomId}/message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ content: content })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            input.value = '';
+            autoResizeTextarea();
+            appendMessage(data.message);
+            if (data.message.id > lastMessageId) lastMessageId = data.message.id;
+        } else {
+            showToast(data.message || 'Error sending message', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to send message', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        input.focus();
+    }
+}
+
+async function uploadFile(file) {
+    const btn = document.getElementById('send-button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
+        const response = await fetch(`/community/api/room/${roomId}/upload`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            appendMessage(data.message);
+            if (data.message.id > lastMessageId) lastMessageId = data.message.id;
+            showToast('File uploaded!', 'success');
+        } else {
+            showToast(data.message || 'Error uploading file', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to upload file', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+    }
+}
+
+function scrollToBottom() {
+    const container = document.getElementById('messages-container');
+    if (container) container.scrollTop = container.scrollHeight;
+}
+
+async function pollMessages() {
+    try {
+        const response = await fetch(`/community/api/room/${roomId}/messages?after=${lastMessageId}`);
+        const data = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(msg => {
+                if (msg.id > lastMessageId) {
+                    appendMessage(msg);
+                    lastMessageId = msg.id;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Polling error:', error);
+    }
+}
+
+function openImageViewer(src) {
+    const viewer = document.getElementById('imageViewer');
+    const viewerImg = document.getElementById('viewerImage');
+    if (viewer && viewerImg) {
+        viewerImg.src = src;
+        viewer.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeImageViewer() {
+    const viewer = document.getElementById('imageViewer');
+    if (viewer) {
+        viewer.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+// ============ INITIALIZATION ============
+document.addEventListener('DOMContentLoaded', function() {
+    // Search rooms
+    const searchInput = document.getElementById('search-rooms');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            document.querySelectorAll('.room-item').forEach(item => {
+                const name = item.getAttribute('data-room-name') || '';
+                item.style.display = (query === '' || name.includes(query)) ? 'block' : 'none';
+            });
+        });
+    }
+    
+    // Emoji picker
+    const emojiBtn = document.getElementById('emoji-button');
+    const emojiPicker = document.getElementById('emoji-picker');
+    
+    if (emojiBtn && emojiPicker) {
+        renderEmojiGrid('');
+        
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (emojiPickerVisible) {
+                emojiPicker.classList.add('hidden');
+            } else {
+                emojiPicker.classList.remove('hidden');
+                renderEmojiGrid('');
+            }
+            emojiPickerVisible = !emojiPickerVisible;
+        });
+        
+        const emojiSearch = document.getElementById('emoji-search');
+        if (emojiSearch) {
+            emojiSearch.addEventListener('input', (e) => {
+                renderEmojiGrid(e.target.value);
+            });
+        }
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#emoji-button') && !e.target.closest('#emoji-picker')) {
+                emojiPicker.classList.add('hidden');
+                emojiPickerVisible = false;
+            }
+        });
+    }
+    
+    // Message input
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        messageInput.addEventListener('input', autoResizeTextarea);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+    
+    // Send button
+    document.getElementById('send-button')?.addEventListener('click', sendMessage);
+    
+    // Attach button
+    const attachBtn = document.getElementById('attach-button');
+    const fileInput = document.getElementById('file-input');
+    if (attachBtn && fileInput) {
+        attachBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                uploadFile(e.target.files[0]);
+                fileInput.value = '';
+            }
+        });
+    }
+    
+    scrollToBottom();
+    pollingInterval = setInterval(pollMessages, 3000);
+});
+
+window.addEventListener('beforeunload', () => {
+    if (pollingInterval) clearInterval(pollingInterval);
+});
+</script>
+
+<style>
+.message-item { transition: all 0.2s ease; }
+.message-menu { opacity: 0; transition: opacity 0.2s ease; }
+.message-item:hover .message-menu { opacity: 1; }
+.typing-dots span { animation: bounce 1.4s infinite ease-in-out both; }
+@keyframes bounce { 0%,80%,100% { transform: scale(0); } 40% { transform: scale(1); } }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.emoji-item:hover { transform: scale(1.15); background-color: #e5f7e5; }
+
+/* Force long words to break and wrap */
+.break-words {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
+}
+
+.message-bubble {
+    max-width: 100%;
+    word-break: break-word;
+}
+/* Custom scrollbar for rooms list and messages */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+#messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+#messages-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+#messages-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+#messages-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+{% endblock %}

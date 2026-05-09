@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Manage External Links</h1>
+        <p class="text-gray-500 text-sm">Edit Google Drive and YouTube links for study materials & ABELE Review</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="flex space-x-8">
+            <button onclick="showTab('materials')" id="tab-materials" class="py-2 px-1 border-b-2 font-medium text-sm transition-all border-green-500 text-green-600">
+                Study Materials Links
+            </button>
+            <button onclick="showTab('abele')" id="tab-abele" class="py-2 px-1 border-b-2 font-medium text-sm transition-all border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                ABELE Review Links
+            </button>
+        </nav>
+    </div>
+
+    <!-- Study Materials Links Tab -->
+    <div id="materials-tab">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Study Material External Links</h2>
+            <button onclick="openMaterialModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Link
+            </button>
+        </div>
+
+        <!-- Filter by Topic -->
+        <div class="mb-4 flex gap-2 flex-wrap">
+            {% for topic in topics %}
+            <button onclick="filterByTopic('{{ topic }}')" id="filter-{{ topic|replace(' ', '_') }}" 
+                    class="px-3 py-1 rounded-full text-sm transition-all {% if loop.first %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                {{ topic }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Links Table -->
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Topic</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Material Title</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Link Name</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">URL</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Order</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="links-table" class="bg-white divide-y divide-gray-200">
+                        {% for link in material_links %}
+                        <tr data-topic="{{ link.topic_name }}">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ link.topic_name }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{{ link.material_title }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="px-2 py-1 text-xs rounded-full {% if 'Review' in link.link_name %}bg-blue-100 text-blue-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                    {{ link.link_name }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-blue-600 truncate max-w-xs">
+                                <a href="{{ link.link_url }}" target="_blank" class="hover:underline">{{ link.link_url|truncate(40) }}</a>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-center text-gray-600">{{ link.display_order }}</td>
+                            <td class="px-4 py-3 text-right text-sm">
+                                <button onclick="editMaterialLink({{ link.id }})" class="text-blue-600 hover:text-blue-800 mr-2">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteLink('material', {{ link.id }})" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                                <i class="fas fa-link text-3xl mb-2 block"></i>
+                                No links yet. Click "Add Link" to create one.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABELE Links Tab -->
+    <div id="abele-tab" class="hidden">
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">URL</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Active</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for link in abele_links %}
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium">
+                                <span class="px-2 py-1 text-xs rounded-full {% if 'QUIZ' in link.section_name %}bg-purple-100 text-purple-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {{ link.section_name }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ link.title }}</td>
+                            <td class="px-4 py-3 text-sm text-blue-600 truncate max-w-xs">
+                                <a href="{{ link.link_url }}" target="_blank" class="hover:underline">{{ link.link_url|truncate(50) }}</a>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-center">
+                                <button onclick="toggleAbeleActive({{ link.id }}, {{ link.is_active|lower }})" 
+                                        class="w-5 h-5 rounded-full {% if link.is_active %}bg-green-500{% else %}bg-gray-300{% endif %} transition-all"></button>
+                            </td>
+                            <td class="px-4 py-3 text-right text-sm">
+                                <button onclick="editAbeleLink({{ link.id }})" class="text-blue-600 hover:text-blue-800 mr-2">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                                <i class="fas fa-graduation-cap text-3xl mb-2 block"></i>
+                                No ABELE links yet. Click "Add Default Links" below.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Add Default Links -->
+        <div class="mt-6 bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-magic text-yellow-600"></i> Quick Setup
+                    </h3>
+                    <p class="text-sm text-gray-600">Create the 6 default ABELE review links (AREA I/II/III Quiz & Solvings)</p>
+                </div>
+                <button onclick="addDefaultAbeleLinks()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm">
+                    <i class="fas fa-plus mr-1"></i> Add Default Links
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Material Link Modal -->
+<div id="materialModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center p-4 border-b sticky top-0 bg-white">
+            <h3 id="materialModalTitle" class="text-lg font-bold text-gray-800">Add Material Link</h3>
+            <button onclick="closeMaterialModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="materialForm" method="POST" action="{{ url_for('admin.create_material_link') }}" class="p-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="material_link_id" name="link_id">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Topic *</label>
+                <select id="material_topic_name" name="topic_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                    <option value="">Select Topic</option>
+                    {% for topic in topics %}
+                    <option value="{{ topic }}">{{ topic }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Material Title *</label>
+                <input type="text" id="material_title" name="material_title" required placeholder="e.g., 1. Agricultural and Biosystems Power Engineering"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                <p class="text-xs text-gray-400 mt-1">The exact title of the study material</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Link Name *</label>
+                <select id="material_link_name" name="link_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                    <option value="">Select Link Type</option>
+                    <option value="Review Materials">📁 Review Materials (Google Drive)</option>
+                    <option value="AB Engineering Guild Videos">🎬 AB Engineering Guild Videos (YouTube)</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL *</label>
+                <input type="url" id="material_link_url" name="link_url" required placeholder="https://drive.google.com/... or https://www.youtube.com/..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+                <input type="number" id="material_display_order" name="display_order" value="0"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-3 border-t">
+                <button type="button" onclick="closeMaterialModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Save Link</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ABELE Link Modal -->
+<div id="abeleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 id="abeleModalTitle" class="text-lg font-bold text-gray-800">Edit ABELE Link</h3>
+            <button onclick="closeAbeleModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="abeleForm" method="POST" action="{{ url_for('admin.edit_abele_link', link_id=0) }}" class="p-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="abele_link_id" name="link_id">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                <input type="text" id="abele_section_name" name="section_name" readonly
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input type="text" id="abele_title" name="title" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL *</label>
+                <input type="url" id="abele_link_url" name="link_url" required placeholder="https://..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-3 border-t">
+                <button type="button" onclick="closeAbeleModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentMaterialFilter = '{% if topics %}{{ topics[0] }}{% endif %}';
+
+function showTab(tab) {
+    if (tab === 'materials') {
+        document.getElementById('materials-tab').classList.remove('hidden');
+        document.getElementById('abele-tab').classList.add('hidden');
+        document.getElementById('tab-materials').classList.add('border-green-500', 'text-green-600');
+        document.getElementById('tab-materials').classList.remove('border-transparent', 'text-gray-500');
+        document.getElementById('tab-abele').classList.remove('border-green-500', 'text-green-600');
+        document.getElementById('tab-abele').classList.add('border-transparent', 'text-gray-500');
+    } else {
+        document.getElementById('materials-tab').classList.add('hidden');
+        document.getElementById('abele-tab').classList.remove('hidden');
+        document.getElementById('tab-abele').classList.add('border-green-500', 'text-green-600');
+        document.getElementById('tab-abele').classList.remove('border-transparent', 'text-gray-500');
+        document.getElementById('tab-materials').classList.remove('border-green-500', 'text-green-600');
+        document.getElementById('tab-materials').classList.add('border-transparent', 'text-gray-500');
+    }
+}
+
+function filterByTopic(topic) {
+    currentMaterialFilter = topic;
+    
+    // Update filter buttons
+    document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+        btn.classList.remove('bg-green-600', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+    });
+    const activeBtn = document.getElementById(`filter-${topic.replace(/ /g, '_')}`);
+    activeBtn.classList.add('bg-green-600', 'text-white');
+    activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    
+    // Filter table rows
+    const rows = document.querySelectorAll('#links-table tr[data-topic]');
+    rows.forEach(row => {
+        if (row.getAttribute('data-topic') === topic) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function openMaterialModal() {
+    document.getElementById('materialModalTitle').innerText = 'Add Material Link';
+    document.getElementById('materialForm').action = "{{ url_for('admin.create_material_link') }}";
+    document.getElementById('material_link_id').value = '';
+    document.getElementById('material_topic_name').value = currentMaterialFilter;
+    document.getElementById('material_title').value = '';
+    document.getElementById('material_link_name').value = '';
+    document.getElementById('material_link_url').value = '';
+    document.getElementById('material_display_order').value = '0';
+    document.getElementById('materialModal').classList.remove('hidden');
+    document.getElementById('materialModal').classList.add('flex');
+}
+
+function closeMaterialModal() {
+    document.getElementById('materialModal').classList.add('hidden');
+    document.getElementById('materialModal').classList.remove('flex');
+}
+
+function editMaterialLink(id) {
+    fetch(`/admin/api/material-link/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('materialModalTitle').innerText = 'Edit Material Link';
+                document.getElementById('materialForm').action = `/admin/material-link/${id}/edit`;
+                document.getElementById('material_link_id').value = data.link.id;
+                document.getElementById('material_topic_name').value = data.link.topic_name;
+                document.getElementById('material_title').value = data.link.material_title;
+                document.getElementById('material_link_name').value = data.link.link_name;
+                document.getElementById('material_link_url').value = data.link.link_url;
+                document.getElementById('material_display_order').value = data.link.display_order;
+                document.getElementById('materialModal').classList.remove('hidden');
+                document.getElementById('materialModal').classList.add('flex');
+            }
+        });
+}
+
+function editAbeleLink(id) {
+    fetch(`/admin/api/abele-link/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('abeleModalTitle').innerText = 'Edit ABELE Link';
+                document.getElementById('abeleForm').action = `/admin/abele-link/${id}/edit`;
+                document.getElementById('abele_link_id').value = data.link.id;
+                document.getElementById('abele_section_name').value = data.link.section_name;
+                document.getElementById('abele_title').value = data.link.title;
+                document.getElementById('abele_link_url').value = data.link.link_url;
+                document.getElementById('abeleModal').classList.remove('hidden');
+                document.getElementById('abeleModal').classList.add('flex');
+            }
+        });
+}
+
+function closeAbeleModal() {
+    document.getElementById('abeleModal').classList.add('hidden');
+    document.getElementById('abeleModal').classList.remove('flex');
+}
+
+function deleteLink(type, id) {
+    if (confirm('Are you sure you want to delete this link?')) {
+        fetch(`/admin/${type}-link/${id}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+
+function toggleAbeleActive(id, currentState) {
+    fetch(`/admin/abele-link/${id}/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+        body: JSON.stringify({ is_active: !currentState })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function addDefaultAbeleLinks() {
+    if (confirm('This will create the 6 default ABELE review links. Existing links with the same section names will be updated.')) {
+        fetch('{{ url_for("admin.add_default_abele_links") }}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

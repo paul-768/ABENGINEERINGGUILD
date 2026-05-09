@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-4">
+    <div class="max-w-3xl mx-auto px-4">
+        <!-- Facebook Style Header -->
+        <div class="bg-white rounded-lg shadow mb-4 p-3">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-bullhorn text-white text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-gray-800">Announcement Board</h1>
+                    <p class="text-xs text-gray-500">AB Engineering Guild</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Facebook Style Posts Feed -->
+        <div class="space-y-3">
+            {% if announcements %}
+                {% for announcement in announcements %}
+                <div class="bg-white rounded-lg shadow {% if announcement.is_pinned %}border-l-4 border-l-yellow-500{% endif %}">
+                    <!-- Pinned Badge (like Facebook's pin) -->
+                    {% if announcement.is_pinned %}
+                    <div class="px-4 pt-2">
+                        <span class="text-[11px] text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
+                            <i class="fas fa-thumbtack text-xs mr-1"></i>Pinned
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Post Header - Facebook Style -->
+                    <div class="p-3 pb-0 flex items-start gap-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white text-sm font-bold">{{ announcement.author.name[0]|upper }}</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-1 flex-wrap">
+                                <span class="font-semibold text-gray-800 text-sm">{{ announcement.author.name }}</span>
+                                <span class="text-gray-400 text-xs">•</span>
+                                <span class="text-gray-500 text-xs">Admin</span>
+                                {% if current_user.is_admin %}
+                                <a href="{{ url_for('admin.manage_announcements') }}" class="ml-2 text-gray-400 hover:text-blue-500 text-xs">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center gap-1 text-xs text-gray-400">
+                                <span>{{ announcement.get_time_ago() }}</span>
+                                <span>•</span>
+                                <span><i class="far fa-calendar-alt"></i> {{ announcement.created_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Post Content - Facebook Style -->
+                    <div class="px-3 py-2">
+                        <h2 class="font-semibold text-gray-800 text-base mb-1">{{ announcement.title }}</h2>
+                        <div class="text-sm text-gray-600 leading-relaxed">
+                            {{ announcement.content|safe }}
+                        </div>
+                    </div>
+                    
+                    <!-- Images Grid - Facebook Style -->
+                    {% set images = announcement.get_images_list() %}
+                    {% if images %}
+                    <div class="px-3 pb-2">
+                        <div class="grid gap-1 rounded-lg overflow-hidden
+                            {% if images|length == 1 %}grid-cols-1
+                            {% elif images|length == 2 %}grid-cols-2
+                            {% elif images|length >= 3 %}grid-cols-3{% endif %}">
+                            {% for img in images %}
+                            <div class="relative {% if images|length == 1 %}aspect-video{% else %}aspect-square{% endif %} 
+                                        {% if loop.index == 1 and images|length == 3 %}col-span-2 row-span-2{% endif %}"
+                                 onclick="openImageModal('{{ url_for('static', filename=img) }}')">
+                                <img src="{{ url_for('static', filename=img) }}" 
+                                     class="w-full h-full object-cover cursor-pointer hover:opacity-95 transition">
+                                {% if loop.index == 4 and images|length > 3 %}
+                                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center cursor-pointer"
+                                     onclick="event.stopPropagation(); openImageModal('{{ url_for('static', filename=img) }}')">
+                                    <span class="text-white text-xl font-bold">+{{ images|length - 3 }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Attachment - Facebook Style Document Card -->
+                    {% if announcement.attachment_file %}
+                    <div class="px-3 pb-2">
+                        <div class="bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
+                            <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                                <i class="fas {{ announcement.get_file_icon() }} text-blue-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-700 truncate">{{ announcement.attachment_filename }}</p>
+                                <p class="text-[10px] text-gray-400">{{ announcement.get_file_size_display() }}</p>
+                            </div>
+                            <a href="{{ url_for('static', filename=announcement.attachment_file) }}" 
+                               download="{{ announcement.attachment_filename }}"
+                               class="text-blue-500 hover:text-blue-600 text-sm px-2 py-1">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Facebook Style Footer - No Reactions, Comments, Shares -->
+                    <div class="px-3 py-2 border-t border-gray-100">
+                        <div class="flex items-center justify-between text-xs text-gray-400">
+                            <div class="flex items-center gap-2">
+                                <i class="far fa-eye"></i>
+                                <span>{{ announcement.view_count|default(0) }} views</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="far fa-clock"></i>
+                                <span>{{ announcement.created_at.strftime('%I:%M %p') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- Empty State - Facebook Style -->
+                <div class="bg-white rounded-lg shadow p-8 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-bullhorn text-gray-300 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500 text-sm">No announcements yet</p>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.manage_announcements') }}" 
+                       class="inline-block mt-3 text-blue-500 text-sm hover:text-blue-600">
+                        Create your first announcement
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Facebook Style Lightbox Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-95 hidden items-center justify-center z-50" onclick="closeImageModal()">
+    <div class="relative max-w-5xl mx-4">
+        <button onclick="closeImageModal()" 
+                class="absolute -top-12 right-0 text-white/60 hover:text-white text-3xl transition">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="modalImage" src="" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl">
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+            Click anywhere to close
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Facebook Style Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #f0f0f0;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #c0c0c0;
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a0a0a0;
+    }
+    
+    /* Facebook Style Content */
+    .prose p {
+        margin-bottom: 0.5rem;
+    }
+    .prose p:last-child {
+        margin-bottom: 0;
+    }
+    .prose strong {
+        color: #1e293b;
+    }
+    .prose a {
+        color: #3b82f6;
+        text-decoration: none;
+    }
+    .prose a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<script>
+    function openImageModal(imageUrl) {
+        document.getElementById('modalImage').src = imageUrl;
+        document.getElementById('imageModal').classList.remove('hidden');
+        document.getElementById('imageModal').classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeImageModal() {
+        document.getElementById('imageModal').classList.add('hidden');
+        document.getElementById('imageModal').classList.remove('flex');
+        document.getElementById('modalImage').src = '';
+        document.body.style.overflow = '';
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeImageModal();
+    });
+    
+    // Prevent modal close when clicking on image
+    document.getElementById('imageModal').addEventListener('click', function(e) {
+        if (e.target === this) closeImageModal();
+    });
+</script>
+{% endblock %}

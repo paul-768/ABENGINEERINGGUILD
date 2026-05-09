@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Find Friends</h1>
+            <p class="text-gray-600 mt-1">Connect with fellow AB Engineering students</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+            <div class="flex gap-3">
+                <div class="flex-1 relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" 
+                           id="searchInput" 
+                           placeholder="Search by name or email..." 
+                           value="{{ query or '' }}"
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                <button onclick="searchUsers()" 
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-search mr-2"></i>Search
+                </button>
+                {% if query %}
+                <a href="{{ url_for('community.find_friends') }}" 
+                   class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Suggested Users / Search Results -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-semibold text-gray-800">
+                            {% if query %}
+                                Search Results
+                            {% else %}
+                                <i class="fas fa-users text-green-600 mr-2"></i>Suggested Connections
+                            {% endif %}
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">
+                            {% if query %}
+                                Found {{ users|length }} user(s) matching "{{ query }}"
+                            {% else %}
+                                Connect with students who share your interests
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if not query %}
+                    <div class="text-xs text-gray-400">
+                        <i class="fas fa-sync-alt mr-1"></i>Updated daily
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="usersList" class="divide-y divide-gray-100">
+                {% if users %}
+                    {% for user in users %}
+                    <div class="user-card p-4 hover:bg-gray-50 transition" data-user-id="{{ user.id }}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <!-- Avatar -->
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white text-xl font-bold shadow-sm flex-shrink-0">
+                                    {% if user.profile_picture and user.profile_picture != 'default_profile.png' %}
+                                    <img src="{{ url_for('static', filename='uploads/profile_pictures/' + user.profile_picture) }}" 
+                                         class="w-full h-full rounded-full object-cover">
+                                    {% else %}
+                                    {{ user.name[0]|upper }}
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- User Info -->
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">{{ user.name }}</h3>
+                                    <div class="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                                        <span><i class="fas fa-envelope mr-1 text-gray-400 text-xs"></i>{{ user.email }}</span>
+                                        <span><i class="fas fa-calendar-alt mr-1 text-gray-400 text-xs"></i>Joined {{ user.created_at.strftime('%b %Y') }}</span>
+                                    </div>
+                                    {% if user.bio %}
+                                    <p class="text-sm text-gray-600 mt-1 line-clamp-1">{{ user.bio[:80] }}{% if user.bio|length > 80 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Mutual Friends -->
+                                    {% set mutual_friends = get_mutual_friends(current_user, user) if get_mutual_friends is defined else [] %}
+                                    {% if mutual_friends %}
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <div class="flex -space-x-2">
+                                            {% for friend in mutual_friends[:3] %}
+                                            <div class="w-6 h-6 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                                {{ friend.name[0]|upper }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <span class="text-xs text-gray-500 ml-2">{{ mutual_friends|length }} mutual friend(s)</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                {% if user.is_friend %}
+                                    <!-- Already Connected -->
+                                    <div class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Connected</span>
+                                    </div>
+                                    <a href="{{ url_for('messages.start_conversation', user_id=user.id) }}" 
+                                       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
+                                        <i class="fas fa-comment"></i>
+                                        <span>Message</span>
+                                    </a>
+                                {% elif user.has_pending_request %}
+                                    {% set request = user.get_friend_request(current_user) if user.get_friend_request else none %}
+                                    {% if request and request.sender_id == current_user.id %}
+                                        <!-- Request Sent -->
+                                        <div class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium flex items-center gap-2">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Request Sent</span>
+                                        </div>
+                                        <button onclick="cancelRequest({{ user.id }})" 
+                                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
+                                            Cancel
+                                        </button>
+                                    {% elif request and request.receiver_id == current_user.id %}
+                                        <!-- Received Request -->
+                                        <div class="flex gap-2">
+                                            <button onclick="acceptRequest({{ request.id }}, {{ user.id }})" 
+                                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2">
+                                                <i class="fas fa-check"></i>
+                                                <span>Accept</span>
+                                            </button>
+                                            <button onclick="declineRequest({{ request.id }}, {{ user.id }})" 
+                                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
+                                                Decline
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <!-- Connect Button -->
+                                        <button onclick="sendConnectionRequest({{ user.id }})" 
+                                                class="connect-btn px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition shadow-sm text-sm font-medium flex items-center gap-2">
+                                            <i class="fas fa-user-plus"></i>
+                                            <span>Connect</span>
+                                        </button>
+                                        <a href="{{ url_for('profile.view_profile', user_id=user.id) }}" 
+                                           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                                            <i class="fas fa-user"></i>
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Connect Button (No pending request) -->
+                                    <button onclick="sendConnectionRequest({{ user.id }})" 
+                                            class="connect-btn px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition shadow-sm text-sm font-medium flex items-center gap-2">
+                                        <i class="fas fa-user-plus"></i>
+                                        <span>Connect</span>
+                                    </button>
+                                    <a href="{{ url_for('profile.view_profile', user_id=user.id) }}" 
+                                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                                        <i class="fas fa-user"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="py-12 text-center">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-user-friends text-3xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No users found</h3>
+                        <p class="text-gray-500">
+                            {% if query %}
+                                No users match "{{ query }}". Try a different search term.
+                            {% else %}
+                                No suggested connections available right now. Check back later!
+                            {% endif %}
+                        </p>
+                        {% if query %}
+                        <a href="{{ url_for('community.find_friends') }}" class="mt-4 inline-block text-green-600 hover:text-green-700">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to suggestions
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pending Requests Section -->
+        {% set pending_requests = current_user.get_pending_friend_requests() if current_user.get_pending_friend_requests else [] %}
+        {% if pending_requests %}
+        <div class="mt-8 bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-yellow-50">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-bell text-yellow-600"></i>
+                    <h2 class="font-semibold text-gray-800">Pending Connection Requests</h2>
+                    <span class="bg-yellow-200 text-yellow-800 text-xs px-2 py-0.5 rounded-full">{{ pending_requests|length }}</span>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-100">
+                {% for request in pending_requests %}
+                <div class="p-4 hover:bg-gray-50 transition" data-request-id="{{ request.id }}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold">
+                                {% if request.sender.profile_picture and request.sender.profile_picture != 'default_profile.png' %}
+                                <img src="{{ url_for('static', filename='uploads/profile_pictures/' + request.sender.profile_picture) }}" 
+                                     class="w-full h-full rounded-full object-cover">
+                                {% else %}
+                                {{ request.sender.name[0]|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">{{ request.sender.name }}</h3>
+                                <p class="text-sm text-gray-500">Wants to connect with you</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ request.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="acceptRequest({{ request.id }}, {{ request.sender.id }})" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2">
+                                <i class="fas fa-check"></i>
+                                <span>Accept</span>
+                            </button>
+                            <button onclick="declineRequest({{ request.id }}, {{ request.sender.id }})" 
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
+                                Decline
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+<script>
+// CSRF Token Helper
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+// Show Toast Notification
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    
+    const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    toast.className = `${bgColor} text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full`;
+    toast.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span class="text-sm font-medium">${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Search Users
+function searchUsers() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (query.length < 2 && query.length > 0) {
+        showToast('Please enter at least 2 characters', 'info');
+        return;
+    }
+    if (query) {
+        window.location.href = `/community/find-friends?q=${encodeURIComponent(query)}`;
+    } else {
+        window.location.href = `/community/find-friends`;
+    }
+}
+
+// Handle Enter key in search
+document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchUsers();
+    }
+});
+
+// Send Connection Request
+async function sendConnectionRequest(userId) {
+    const button = event?.target?.closest('.connect-btn');
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Sending...</span>';
+    }
+    
+    try {
+        const response = await fetch(`/community/api/send-request/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message || 'Connection request sent!', 'success');
+            // Reload page to update UI state
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Failed to send request', 'error');
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-user-plus"></i><span>Connect</span>';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error. Please try again.', 'error');
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-user-plus"></i><span>Connect</span>';
+        }
+    }
+}
+
+// Accept Friend Request
+async function acceptRequest(requestId, userId) {
+    try {
+        const response = await fetch(`/community/api/accept-request/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message || 'Connection accepted!', 'success');
+            
+            // Remove the request row from pending section
+            const requestRow = document.querySelector(`[data-request-id="${requestId}"]`);
+            if (requestRow) {
+                requestRow.remove();
+            }
+            
+            // Update the user card in search results
+            const userCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+            if (userCard) {
+                const actionDiv = userCard.querySelector('.flex.gap-2');
+                if (actionDiv) {
+                    actionDiv.innerHTML = `
+                        <div class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Connected</span>
+                        </div>
+                        <a href="/messages/start_conversation/${userId}" 
+                           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
+                            <i class="fas fa-comment"></i>
+                            <span>Message</span>
+                        </a>
+                    `;
+                }
+            }
+            
+            // Refresh page after 1.5 seconds to ensure consistency
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showToast(data.message || 'Failed to accept request', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+// Decline Friend Request
+async function declineRequest(requestId, userId) {
+    try {
+        const response = await fetch(`/community/api/decline-request/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message || 'Request declined', 'info');
+            
+            // Remove the request row
+            const requestRow = document.querySelector(`[data-request-id="${requestId}"]`);
+            if (requestRow) {
+                requestRow.remove();
+            }
+            
+            // Update user card back to "Connect" button
+            const userCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+            if (userCard) {
+                const actionDiv = userCard.querySelector('.flex.gap-2');
+                if (actionDiv) {
+                    actionDiv.innerHTML = `
+                        <button onclick="sendConnectionRequest(${userId})" 
+                                class="connect-btn px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition shadow-sm text-sm font-medium flex items-center gap-2">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Connect</span>
+                        </button>
+                        <a href="/profile/${userId}" 
+                           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                            <i class="fas fa-user"></i>
+                        </a>
+                    `;
+                }
+            }
+        } else {
+            showToast(data.message || 'Failed to decline request', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+
+// Cancel Sent Request
+async function cancelRequest(userId) {
+    try {
+        const response = await fetch(`/community/api/cancel-request/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message || 'Request cancelled', 'info');
+            window.location.reload();
+        } else {
+            showToast(data.message || 'Failed to cancel request', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error. Please try again.', 'error');
+    }
+}
+</script>
+
+<style>
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.user-card {
+    transition: all 0.2s ease;
+}
+
+.user-card:hover {
+    background-color: #f9fafb;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
+{% endblock %}

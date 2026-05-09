@@ -1,0 +1,397 @@
+<!-- app/templates/components/header.html -->
+<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Left edge: Logo and Brand -->
+            <div class="flex items-center">
+                <!-- Circle Logo -->
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
+                        <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                             class="w-full h-full object-cover" alt="AB Engineering Guild">
+                    </div>
+                </div>
+                
+                <!-- Brand Name -->
+                <div class="flex-shrink-0 ml-3">
+                    <h1 class="text-xl font-bold text-gray-900">AB Engineering Guild</h1>
+                </div>
+            </div>
+            
+            <!-- Right side: Notification and Profile -->
+            <div class="flex items-center space-x-4">
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" 
+            class="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+        <i id="darkModeIcon" class="fas fa-moon text-xl"></i>
+    </button>
+                <!-- Notification Bell Component -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" 
+                            class="p-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 relative">
+                        <i class="fas fa-bell text-xl"></i>
+                        {% if current_user.get_unread_notifications_count() > 0 %}
+                            <span class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {{ current_user.get_unread_notifications_count() }}
+                            </span>
+                        {% endif %}
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div x-show="open" 
+                        x-cloak
+                        @click.away="open = false"
+                        class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
+                        style="display: none;">
+                        
+                        <!-- Header -->
+                        <div class="p-4 border-b border-gray-200 bg-white rounded-t-lg">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+                                <a href="{{ url_for('main.notifications_page') }}" class="relative">
+    <i class="fas fa-bell text-gray-600 text-xl"></i>
+    <span class="notification-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+</a>
+                            </div>
+                        </div>
+
+                        <!-- Notifications List -->
+                        <div class="p-2" id="notification-dropdown-list">
+                            {% set recent_notifications = current_user.get_recent_notifications(5) %}
+                            {% if recent_notifications %}
+                                {% for notification in recent_notifications %}
+                                <div class="p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer border-b border-gray-100 last:border-b-0"
+                                    onclick="handleNotificationClick({{ notification.id }}, '{{ notification.action_url or '#' }}')">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="flex-shrink-0 w-8 h-8 rounded-full {% if not notification.is_read %}bg-blue-100{% else %}bg-gray-100{% endif %} flex items-center justify-center">
+                                            <i class="{{ notification.icon or 'fas fa-bell' }} {% if not notification.is_read %}text-blue-600{% else %}text-gray-600{% endif %} text-sm"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate">{{ notification.title }}</p>
+                                            <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ notification.message }}</p>
+                                            <p class="text-xs text-gray-400 mt-2">{{ notification.get_time_ago() }}</p>
+                                        </div>
+                                        {% if not notification.is_read %}
+                                            <div class="flex-shrink-0">
+                                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-8 text-gray-500">
+                                    <i class="fas fa-bell-slash text-2xl mb-3 text-gray-300"></i>
+                                    <p class="text-sm">No notifications</p>
+                                    <p class="text-xs text-gray-400 mt-1">New notifications will appear here</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="p-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                            <button onclick="markAllAsRead()"
+                                    class="w-full text-center py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors flex items-center justify-center">
+                                <i class="fas fa-check-double mr-2"></i>
+                                Mark all as read
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div class="relative" id="header-user-dropdown">
+                    <button class="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                            id="header-dropdown-trigger">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);">
+                            {% if current_user.profile_picture and current_user.profile_picture != 'default_profile.png' %}
+                            <img src="{{ url_for('static', filename='uploads/profile_pictures/' + current_user.profile_picture) }}" 
+                                 class="w-8 h-8 rounded-full object-cover">
+                            {% else %}
+                            <span class="text-white text-sm font-semibold">
+                                {{ current_user.name[0]|upper if current_user.name else 'U' }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    </button>
+                    
+                    <!-- Profile Dropdown Menu -->
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 hidden" 
+                         id="header-dropdown-menu">
+                        <!-- User Info -->
+                        <div class="px-4 py-3 border-b border-gray-200">
+                            <p class="text-sm font-medium text-gray-900 truncate">
+                                {{ current_user.name }}
+                            </p>
+                            <p class="text-xs text-gray-500 truncate">{{ current_user.email }}</p>
+                        </div>
+                                                
+                        <!-- Profile Link -->
+                        <div class="px-2 py-1">
+                            <a href="{{ url_for('profile.view_profile', user_id=current_user.id) }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors flex items-center">
+                                <i class="fas fa-user mr-2"></i>My Profile
+                            </a>
+                        </div>
+                        
+                        <!-- Settings -->
+                        <div class="px-2 py-1">
+                            <a href="{{ url_for('profile.edit_profile') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors flex items-center">
+                                <i class="fas fa-cog mr-2"></i>Settings
+                            </a>
+                        </div>
+
+                        <!-- Dashboard -->
+                        <div class="px-2 py-1">
+                            <a href="{{ url_for('main.dashboard') }}" 
+                               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors flex items-center">
+                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                            </a>
+                        </div>
+                        
+                        <!-- Change Password -->
+                        <div class="px-2 py-1 border-t border-gray-100">
+                            <button onclick="openChangePasswordModal()" 
+                                    class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors flex items-center">
+                                <i class="fas fa-key mr-2"></i>Change Password
+                            </button>
+                        </div>
+                        
+                        <!-- Logout -->
+                        <div class="px-2 py-1 border-t border-gray-100">
+                            <button onclick="openLogoutConfirmation()" 
+                                    class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors flex items-center">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutConfirmationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] hidden">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div class="flex items-center mb-4">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-sign-out-alt text-red-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Confirm Logout</h3>
+                <p class="text-gray-600 mt-1">Are you sure you want to logout?</p>
+            </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-6">
+            <button onclick="closeLogoutConfirmation()" 
+                    class="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg transition-colors">
+                Cancel
+            </button>
+            <form id="logoutForm" method="POST" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    Yes, Logout
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const headerDropdownTrigger = document.getElementById('header-dropdown-trigger');
+    const headerDropdownMenu = document.getElementById('header-dropdown-menu');
+    
+    if (headerDropdownTrigger && headerDropdownMenu) {
+        headerDropdownTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            headerDropdownMenu.classList.toggle('hidden');
+        });
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (headerDropdownTrigger && !headerDropdownTrigger.contains(e.target) && headerDropdownMenu && !headerDropdownMenu.contains(e.target)) {
+            headerDropdownMenu.classList.add('hidden');
+        }
+        
+        const logoutModal = document.getElementById('logoutConfirmationModal');
+        if (logoutModal && !logoutModal.contains(e.target) && !e.target.closest('[onclick="openLogoutConfirmation()"]')) {
+            closeLogoutConfirmation();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (headerDropdownMenu) headerDropdownMenu.classList.add('hidden');
+            closeLogoutConfirmation();
+        }
+    });
+});
+
+function openLogoutConfirmation() {
+    const headerDropdownMenu = document.getElementById('header-dropdown-menu');
+    if (headerDropdownMenu) {
+        headerDropdownMenu.classList.add('hidden');
+    }
+    
+    const logoutModal = document.getElementById('logoutConfirmationModal');
+    if (logoutModal) {
+        logoutModal.classList.remove('hidden');
+    }
+}
+
+function closeLogoutConfirmation() {
+    const logoutModal = document.getElementById('logoutConfirmationModal');
+    if (logoutModal) {
+        logoutModal.classList.add('hidden');
+    }
+}
+
+async function performLogout() {
+    try {
+        const response = await fetch('{{ url_for("auth.logout") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+            window.location.href = '{{ url_for("main.index") }}';
+        } else {
+            document.getElementById('logoutForm').submit();
+        }
+    } catch (error) {
+        document.getElementById('logoutForm').submit();
+    }
+}
+
+async function loadNotificationDropdown() {
+    try {
+        const response = await fetch('/notifications/api/notifications?limit=5');
+        const data = await response.json();
+        
+        const container = document.getElementById('notification-dropdown-list');
+        
+        if (data.notifications.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-bell-slash text-2xl mb-3 text-gray-300"></i>
+                    <p class="text-sm">No notifications</p>
+                    <p class="text-xs text-gray-400 mt-1">New notifications will appear here</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = data.notifications.map(notification => `
+            <div class="p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer border-b border-gray-100 last:border-b-0"
+                 onclick="handleNotificationClick(${notification.id}, '${notification.action_url || '#'}')">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full ${!notification.is_read ? 'bg-blue-100' : 'bg-gray-100'} flex items-center justify-center">
+                        <i class="${notification.icon} ${!notification.is_read ? 'text-blue-600' : 'text-gray-600'} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">${notification.title}</p>
+                        <p class="text-xs text-gray-600 mt-1 line-clamp-2">${notification.message}</p>
+                        <p class="text-xs text-gray-400 mt-2">${notification.time_ago}</p>
+                    </div>
+                    ${!notification.is_read ? `<div class="flex-shrink-0"><div class="w-2 h-2 bg-blue-500 rounded-full"></div></div>` : ''}
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+    }
+}
+
+async function handleNotificationClick(notificationId, actionUrl) {
+    await markAsRead(notificationId);
+    
+    const dropdown = document.querySelector('[x-data] [x-show]');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+        const alpineComponent = dropdown.closest('[x-data]');
+        if (alpineComponent && alpineComponent.__x) {
+            alpineComponent.__x.$data.open = false;
+        }
+    }
+    
+    if (actionUrl && actionUrl !== '#') {
+        window.location.href = actionUrl;
+    }
+}
+
+async function markAsRead(notificationId) {
+    try {
+        const response = await fetch('/notifications/api/notifications/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_id: notificationId })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            updateNotificationBadge();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function markAllAsRead() {
+    try {
+        const response = await fetch('/notifications/api/notifications/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_id: 'all' })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            updateNotificationBadge();
+            loadNotificationDropdown();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function updateNotificationBadge() {
+    try {
+        const response = await fetch('/notifications/api/notifications?limit=1&unread_only=true');
+        const data = await response.json();
+        
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            if (data.unread_count > 0) {
+                badge.textContent = data.unread_count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function openChangePasswordModal() {
+    const headerDropdownMenu = document.getElementById('header-dropdown-menu');
+    if (headerDropdownMenu) {
+        headerDropdownMenu.classList.add('hidden');
+    }
+    window.location.href = "{{ url_for('profile.edit_profile') }}";
+}
+
+setInterval(updateNotificationBadge, 30000);
+</script>

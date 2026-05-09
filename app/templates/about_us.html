@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-yellow-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center p-2 bg-green-100 rounded-full mb-4">
+                <i class="fas fa-leaf text-green-700 text-2xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">About <span class="text-green-600">AB Engineering Guild</span></h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Empowering the next generation of Agricultural and Biosystems Engineers
+            </p>
+        </div>
+
+        <!-- Mission & Vision -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white rounded-2xl shadow-lg p-8 border-l-8 border-green-500">
+                <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mb-4">
+                    <i class="fas fa-bullseye text-green-700 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Our Mission</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    To provide accessible, high-quality review materials and interactive assessments 
+                    that help Agricultural and Biosystems Engineering students excel in their board 
+                    examinations and professional careers.
+                </p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-8 border-l-8 border-yellow-500">
+                <div class="w-14 h-14 bg-yellow-100 rounded-2xl flex items-center justify-center mb-4">
+                    <i class="fas fa-eye text-yellow-700 text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Our Vision</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    To be the leading digital learning platform for ABE students in the Philippines, 
+                    fostering excellence, innovation, and community among future agricultural engineers.
+                </p>
+            </div>
+        </div>
+
+        <!-- Core Values -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">Our Core Values</h2>
+                <div class="w-20 h-1 bg-green-500 mx-auto mt-2 rounded-full"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-4">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-graduation-cap text-green-700 text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900">Excellence</h4>
+                    <p class="text-sm text-gray-600 mt-2">Striving for the highest quality in education and resources</p>
+                </div>
+                <div class="text-center p-4">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-users text-yellow-700 text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900">Community</h4>
+                    <p class="text-sm text-gray-600 mt-2">Building a supportive network of ABE students and professionals</p>
+                </div>
+                <div class="text-center p-4">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-lightbulb text-green-700 text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900">Innovation</h4>
+                    <p class="text-sm text-gray-600 mt-2">Embracing technology to enhance learning experiences</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- What We Offer -->
+        <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl shadow-xl p-8 mb-12 text-white">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold">What We Offer</h2>
+                <p class="text-green-100 mt-2">Comprehensive tools for ABE board exam preparation</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white/10 rounded-xl p-4 text-center backdrop-blur-sm">
+                    <i class="fas fa-book-open text-3xl mb-2"></i>
+                    <p class="font-semibold">Reviewer Modules</p>
+                    <p class="text-sm text-green-100">Complete coverage of ABE topics</p>
+                </div>
+                <div class="bg-white/10 rounded-xl p-4 text-center backdrop-blur-sm">
+                    <i class="fas fa-question-circle text-3xl mb-2"></i>
+                    <p class="font-semibold">Practice Quizzes</p>
+                    <p class="text-sm text-green-100">Timed and practice modes</p>
+                </div>
+                <div class="bg-white/10 rounded-xl p-4 text-center backdrop-blur-sm">
+                    <i class="fas fa-chart-line text-3xl mb-2"></i>
+                    <p class="font-semibold">Performance Analytics</p>
+                    <p class="text-sm text-green-100">Track your progress</p>
+                </div>
+                <div class="bg-white/10 rounded-xl p-4 text-center backdrop-blur-sm">
+                    <i class="fas fa-trophy text-3xl mb-2"></i>
+                    <p class="font-semibold">Leaderboard</p>
+                    <p class="text-sm text-green-100">Compete with peers</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meet the Team -->
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">The AB Engineering Guild Team</h2>
+                <p class="text-gray-600 mt-2">Dedicated to your success</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-user-graduate text-white text-4xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900">Engr. Michael Reyes</h4>
+                    <p class="text-sm text-green-600">Lead Developer & ABE Specialist</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-chalkboard-teacher text-white text-4xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900">Dr. Maria Santos</h4>
+                    <p class="text-sm text-yellow-600">Content Director</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-laptop-code text-white text-4xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900">John Dela Cruz</h4>
+                    <p class="text-sm text-green-600">Full-Stack Developer</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

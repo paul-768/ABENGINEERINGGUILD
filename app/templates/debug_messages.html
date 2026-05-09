@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Messages</title>
+</head>
+<body>
+    <h1>Debug Messages Access</h1>
+    <p><a href="{{ url_for('messages.inbox') }}">Go to Messages Inbox</a></p>
+    <p>Current User: {{ current_user.name if current_user else 'Not logged in' }}</p>
+    <p>Messages URL: {{ url_for('messages.inbox') }}</p>
+    
+    <script>
+        console.log('Messages URL:', '{{ url_for('messages.inbox') }}');
+    </script>
+</body>
+</html>

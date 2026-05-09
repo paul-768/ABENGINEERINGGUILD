@@ -1,0 +1,92 @@
+<!-- app/templates/components/sidebar.html - All links with green highlight -->
+
+<aside class="sidebar-bg w-64 min-h-screen p-4 border-r border-gray-200">
+    <nav class="space-y-2">
+        {% set endpoint = request.endpoint|default('') %}
+        
+        <a href="{{ url_for('main.dashboard') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint == 'main.dashboard' %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-home mr-3"></i>
+            Dashboard
+        </a>
+        
+        <a href="{{ url_for('reviewer.topics') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint and 'reviewer' in endpoint %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-book mr-3"></i>
+            Reviewer
+        </a>
+        
+        <a href="{{ url_for('quiz.quiz_home') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint and 'quiz' in endpoint %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-question-circle mr-3"></i>
+            Quiz
+        </a>
+        
+        <a href="{{ url_for('scoreboard.scoreboard') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint and 'scoreboard' in endpoint %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-trophy mr-3"></i>
+            Scoreboard
+        </a>
+        
+        <a href="{{ url_for('scoreboard.analytics') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint == 'scoreboard.analytics' %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-chart-line mr-3"></i>
+            Analytics
+        </a>
+        
+        {% if current_user.is_authenticated %}
+        <a href="/community" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if request.path.startswith('/community') %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-users mr-3"></i>
+            Community
+        </a>
+        
+        <a href="{{ url_for('messages.inbox') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint and 'messages' in endpoint %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-envelope mr-3"></i>
+            Messages
+            {% if unread_messages_count and unread_messages_count > 0 %}
+            <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                {{ unread_messages_count }}
+            </span>
+            {% endif %}
+        </a>
+        
+        <a href="{{ url_for('main.abe_applications') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint == 'main.abe_applications' %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-mobile-alt mr-3"></i>
+            ABE Applications
+        </a>
+        
+        <a href="{{ url_for('main.announcement_board') }}" 
+           class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint == 'main.announcement_board' %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6m-1 8h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2z"/>
+            </svg>
+            <span>Announcements</span>
+        </a>
+        
+        <a href="{{ url_for('main.contact_support') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint == 'main.contact_support' %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-headset mr-3"></i>
+            Information Hub
+        </a>
+        
+        <a href="{{ url_for('main.privacy_policy') }}" 
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if endpoint == 'main.privacy_policy' %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-shield-alt mr-3"></i>
+            Privacy Policy
+        </a>
+        
+        <!-- Admin links -->
+        {% if current_user.is_admin %}
+        <a href="/admin/dashboard"
+           class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {% if request.path.startswith('/admin/dashboard') %}bg-green-50 text-green-600{% else %}hover:bg-green-50 hover:text-green-600{% endif %}">
+            <i class="fas fa-cog mr-3"></i>
+            Admin Dashboard
+        </a>
+               
+        {% endif %}
+        {% endif %}
+    </nav>
+</aside>

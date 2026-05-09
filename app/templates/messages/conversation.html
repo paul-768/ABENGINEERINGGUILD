@@ -1,0 +1,775 @@
+<!-- app/templates/messages/conversation.html - Fixed version -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-full">
+    <!-- Fixed Frame - 84% height, centered -->
+    <div class="w-full max-w-7xl mx-auto px-4" style="height: 84vh;">
+        <div class="bg-gray-50 rounded-2xl shadow-lg flex flex-col h-full overflow-hidden">
+            
+            <!-- Two Column Layout -->
+            <div class="flex flex-1 overflow-hidden">
+                
+                <!-- LEFT SIDEBAR - Contacts -->
+                <div class="w-72 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
+                        <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <i class="fas fa-leaf mr-2 text-green-600"></i>
+                            <span class="text-green-800">Messages</span>
+                            <span class="ml-2 text-xs text-gray-400">· {{ conversations|length }}</span>
+                        </h4>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="search-contacts" 
+                                   placeholder="Search contacts..." 
+                                   class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white">
+                        </div>
+                    </div>
+                    
+                    <!-- Contacts List -->
+                    <div id="contacts-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                        {% for conv in conversations %}
+                            <div class="contact-item rounded-lg transition-all duration-200 {% if conversation.id == conv.id %}bg-gray-100 shadow-sm{% else %}hover:bg-gray-50{% endif %}"
+                                 data-contact-name="{{ conv.other_user.name.lower() }}">
+                                <a href="{{ url_for('messages.conversation', conversation_id=conv.id) }}" class="block p-2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2 flex-1 min-w-0">
+                                            <div class="relative flex-shrink-0">
+                                                <div class="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                                    {% if conv.other_user.profile_picture and conv.other_user.profile_picture != 'default_profile.png' %}
+                                                    <img src="{{ url_for('static', filename='uploads/profile_pictures/' + conv.other_user.profile_picture) }}" 
+                                                         class="w-full h-full rounded-full object-cover">
+                                                    {% else %}
+                                                    {{ conv.other_user.name[0]|upper }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if conv.other_user.is_online %}
+                                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-sm font-medium {% if conversation.id == conv.id %}text-green-700{% else %}text-gray-700{% endif %} truncate max-w-[100px]">
+                                                        {{ conv.other_user.name }}
+                                                    </span>
+                                                    <span class="text-xs text-gray-400 ml-1 flex-shrink-0">{{ conv.time_ago }}</span>
+                                                </div>
+                                                {% if conv.last_message.content %}
+                                                <p class="text-xs text-gray-400 truncate mt-0.5">
+                                                    {% if conv.last_message.sender_id == current_user.id %}
+                                                        <span class="text-gray-400">You: </span>
+                                                    {% endif %}
+                                                    {{ conv.last_message.content[:30] }}
+                                                </p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if conv.unread_count > 0 %}
+                                        <span class="ml-2 text-xs text-white bg-green-600 px-1.5 py-0.5 rounded-full flex-shrink-0">{{ conv.unread_count }}</span>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                            </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-comments text-green-400 text-xl"></i>
+                            </div>
+                            <p class="text-gray-500 text-sm">No messages yet</p>
+                            <button onclick="openNewMessageModal()" class="mt-2 text-green-600 text-sm hover:underline">Start a conversation</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- RIGHT SIDE - Chat Area -->
+                <div class="flex-1 flex flex-col overflow-hidden bg-white">
+                    {% if other_user %}
+                    <!-- Chat Header -->
+                    <div class="p-3 border-b border-gray-200 bg-white flex-shrink-0">
+                        <div class="flex items-center justify-between">
+                            <a href="{{ url_for('profile.view_profile', user_id=other_user.id) }}" class="flex items-center space-x-3 hover:opacity-80 transition group">
+                                <div class="relative">
+                                    <div class="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white font-bold shadow-sm">
+                                        {% if other_user.profile_picture and other_user.profile_picture != 'default_profile.png' %}
+                                        <img src="{{ url_for('static', filename='uploads/profile_pictures/' + other_user.profile_picture) }}" 
+                                             class="w-full h-full rounded-full object-cover">
+                                        {% else %}
+                                        {{ other_user.name[0]|upper }}
+                                        {% endif %}
+                                    </div>
+                                    {% if other_user.is_online %}
+                                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-900 group-hover:text-green-600 transition">{{ other_user.name }}</h2>
+                                    <p class="text-xs text-gray-500">
+                                        {% if other_user.is_online %}
+                                            <span class="text-green-600">Online</span>
+                                        {% else %}
+                                            Last seen {{ other_user.last_seen.strftime('%b %d, %Y') if other_user.last_seen else 'recently' }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </a>
+                            <button onclick="openNewMessageModal()" class="flex items-center space-x-1 text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-full transition-colors shadow-sm">
+                                <i class="fas fa-plus text-xs"></i>
+                                <span>New</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages Container -->
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                        {% for message in messages %}
+                        <div class="flex {% if message.sender_id == current_user.id %}justify-end{% endif %} message-item" data-message-id="{{ message.id }}" data-sender-id="{{ message.sender_id }}" data-created-at="{{ message.created_at.isoformat() }}">
+                            <div class="flex items-start space-x-2 max-w-[70%] {% if message.sender_id == current_user.id %}flex-row-reverse space-x-reverse{% endif %}">
+                                {% if message.sender_id != current_user.id %}
+                                <a href="{{ url_for('profile.view_profile', user_id=message.sender.id) }}" class="flex-shrink-0">
+                                    <div class="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-white text-xs shadow-sm">
+                                        {% if message.sender.profile_picture and message.sender.profile_picture != 'default_profile.png' %}
+                                        <img src="{{ url_for('static', filename='uploads/profile_pictures/' + message.sender.profile_picture) }}" 
+                                             class="w-full h-full rounded-full object-cover">
+                                        {% else %}
+                                        {{ message.sender.name[0]|upper }}
+                                        {% endif %}
+                                    </div>
+                                </a>
+                                {% endif %}
+                                <div class="relative">
+                                    <div class="px-3 py-2 rounded-lg {% if message.sender_id == current_user.id %}bg-green-600 text-white shadow-sm{% else %}bg-white border border-gray-200 text-gray-700 shadow-sm{% endif %}">
+                                        <div id="message-content-{{ message.id }}" class="message-content-view">
+                                            {% if message.message_type == 'image' %}
+                                                <img src="{{ url_for('static', filename='uploads/messages/' + message.file_path) }}" 
+                                                     class="max-w-xs rounded-lg cursor-pointer" 
+                                                     onclick="openImageViewer(this.src)">
+                                            {% elif message.message_type == 'file' %}
+                                                <a href="{{ url_for('static', filename='uploads/messages/' + message.file_path) }}" 
+                                                   class="flex items-center space-x-2 text-sm" download>
+                                                    <i class="fas fa-file-alt text-lg"></i>
+                                                    <span>{{ message.file_name }}</span>
+                                                    <span class="text-xs opacity-70">({{ (message.file_size / 1024)|round|int }} KB)</span>
+                                                </a>
+                                            {% else %}
+                                                <p class="text-sm whitespace-pre-wrap break-words">{{ message.content }}</p>
+                                            {% endif %}
+                                            {% if message.is_edited %}
+                                            <span class="text-xs opacity-70 mt-1 block">(edited)</span>
+                                            {% endif %}
+                                        </div>
+                                        <div id="message-edit-{{ message.id }}" class="message-edit-view hidden mt-1">
+                                            <textarea id="edit-text-{{ message.id }}" class="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500" rows="2">{{ message.content }}</textarea>
+                                            <div class="flex gap-2 mt-1">
+                                                <button onclick="saveMessageEdit({{ message.id }})" class="px-2 py-1 bg-green-500 text-white rounded text-xs">Save</button>
+                                                <button onclick="cancelMessageEdit({{ message.id }})" class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">Cancel</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-1 ml-1">{{ format_time_pht(message.created_at) }}</p>
+                                </div>
+                                {% if message.sender_id == current_user.id %}
+                                <div class="message-menu flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="editMessage({{ message.id }})" class="text-gray-400 hover:text-blue-500 transition text-sm p-1" title="Edit message">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </button>
+                                    <button onclick="deleteMessage({{ message.id }})" class="text-gray-400 hover:text-red-500 transition text-sm p-1" title="Delete message">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12 text-gray-400">
+                            <i class="fas fa-comment-dots text-4xl mb-2 text-green-300"></i>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Typing Indicator -->
+                    <div id="typing-indicator" class="hidden px-4 py-2 text-xs text-gray-500 italic bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                        <div class="flex items-center space-x-2">
+                            <span>Someone is typing</span>
+                            <div class="typing-dots flex space-x-1">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0s"></span>
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="p-3 border-t border-gray-200 bg-white flex-shrink-0 relative">
+                        <div class="flex space-x-2">
+                            <button id="emoji-button" class="px-3 py-2 rounded-xl hover:bg-green-50 text-gray-500 hover:text-green-600 transition-colors">
+                                <i class="far fa-smile-wink text-xl"></i>
+                            </button>
+                            <button id="attach-button" class="px-3 py-2 rounded-xl hover:bg-green-50 text-gray-500 hover:text-green-600 transition-colors">
+                                <i class="fas fa-paperclip text-xl"></i>
+                            </button>
+                            <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,.txt">
+                            <input type="text" id="message-input" 
+                                   placeholder="Type your message..." 
+                                   autocomplete="off"
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                            <button id="send-button" 
+                                    class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all shadow-sm">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                        
+                        <!-- Emoji Picker -->
+                        <div id="emoji-picker" class="hidden absolute bottom-full left-0 mb-2 w-96 bg-white border border-green-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                            <div class="p-3 border-b border-green-200 bg-white">
+                                <div class="flex flex-wrap gap-1 mb-3">
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="all">All</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="smiles">😊 Smiles</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="gestures">👍 Gestures</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="hearts">❤️ Hearts</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="animals">🐶 Animals</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="food">🍕 Food</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="sports">⚽ Sports</button>
+                                    <button class="emoji-category-btn px-3 py-1.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition-colors" data-category="travel">✈️ Travel</button>
+                                </div>
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                                    <input type="text" id="emoji-search" placeholder="Search emojis..." 
+                                           class="w-full pl-9 pr-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                                </div>
+                            </div>
+                            <div id="emoji-grid" class="emoji-grid p-3 max-h-64 overflow-y-auto bg-white"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex-1 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-comments text-green-400 text-3xl"></i>
+                            </div>
+                            <p class="text-gray-500">Select a contact to start messaging</p>
+                            <button onclick="openNewMessageModal()" class="mt-4 text-green-600 hover:underline">Start a new conversation</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Message Modal -->
+<div id="newMessageModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-gray-200">
+        <div class="p-4 border-b border-gray-200 bg-white">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-green-800">New Message</h3>
+                <button onclick="closeNewMessageModal()" class="text-gray-400 hover:text-green-600 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-4">
+            <div class="mb-3">
+                <input type="text" id="search-user-input" 
+                       placeholder="Search by name or email..." 
+                       class="w-full px-4 py-2 border border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+            </div>
+            <div id="search-results" class="max-h-64 overflow-y-auto space-y-2"></div>
+            <div class="mt-3 flex justify-end">
+                <button onclick="closeNewMessageModal()" class="px-4 py-2 text-gray-600 hover:bg-green-50 rounded-lg transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="imageViewer" class="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 hidden">
+    <button onclick="closeImageViewer()" class="absolute top-4 right-4 text-white text-2xl hover:opacity-75">&times;</button>
+    <img id="viewerImage" class="max-w-full max-h-full object-contain">
+</div>
+
+<script>
+const conversationId = {{ conversation.id }};
+const currentUserId = {{ current_user.id }};
+const currentUserName = "{{ current_user.name }}";
+let socket = null;
+let messagePollInterval = null;
+let lastMessageId = {{ messages[-1].id if messages else 0 }};
+let typingTimeout = null;
+let isTyping = false;
+let currentEmojiCategory = 'all';
+
+// COMPLETE EMOJI LIST
+const emojiList = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾',
+    '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🦷', '🦴', '👀', '👁️', '👅', '👄',
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❤️‍🔥', '❤️‍🩹', '💖', '💗', '💓', '💞', '💕', '💟', '❣️', '💝', '💘', '💌',
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐒', '🐔', '🐧', '🐦', '🐤', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🐢', '🐍', '🦎', '🐙', '🦑', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐘', '🦒', '🐪', '🐫', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🐐', '🦌', '🐕', '🐩', '🐈', '🐓', '🦃', '🦚', '🦜', '🦢', '🕊️', '🐇', '🐀', '🐿️', '🦔', '🐉', '🐲',
+    '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🥔', '🍠', '🍞', '🥖', '🥨', '🧀', '🍳', '🥚', '🍔', '🍟', '🍕', '🌮', '🌯', '🥗', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🍤', '🍙', '🍚', '🍘', '🍥', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🥜', '🍯', '🥛', '☕', '🍵', '🥤', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹',
+    '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🏓', '🏸', '🏒', '🏑', '🎿', '⛷️', '🏂', '🏋️', '🤼', '🤸', '⛹️', '🤾', '🏌️', '🏇', '🧘', '🏄', '🏊', '🤽', '🚣', '🧗', '🚵', '🚴', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🎯', '🎳', '🎮', '🎲',
+    '🚗', '🚕', '🚙', '🚌', '🚎', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛹', '✈️', '🚀', '🛸', '🚁', '⛵', '🚤', '🛥️', '🛳️', '🚢', '⚓', '🚉', '🚂', '🚆', '🚇', '🗺️', '🗽', '🗼', '🏰', '🏯', '🏖️', '🏝️', '🏜️', '🌋', '⛰️', '🏔️', '🗻', '🏕️', '⛺', '🏠', '🏡', '🏢', '🏣', '🏤', '🏥', '🏦', '🏨', '🏩', '🏪', '🏫', '🏬', '🏭'
+];
+
+const emojiCategories = {
+    all: emojiList,
+    smiles: emojiList.slice(0, 100),
+    gestures: emojiList.slice(100, 150),
+    hearts: emojiList.slice(150, 175),
+    animals: emojiList.slice(175, 250),
+    food: emojiList.slice(250, 320),
+    sports: emojiList.slice(320, 360),
+    travel: emojiList.slice(360, 420)
+};
+
+function initEmojiPicker() {
+    renderEmojiGrid(currentEmojiCategory);
+    
+    document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentEmojiCategory = this.dataset.category;
+            renderEmojiGrid(currentEmojiCategory);
+            
+            document.querySelectorAll('.emoji-category-btn').forEach(b => {
+                b.classList.remove('bg-green-600', 'text-white');
+                b.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            this.classList.remove('bg-gray-100', 'text-gray-700');
+            this.classList.add('bg-green-600', 'text-white');
+        });
+    });
+    
+    const searchInput = document.getElementById('emoji-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const emojis = emojiCategories[currentEmojiCategory] || emojiCategories.all;
+            const filtered = emojis.filter(emoji => emoji.includes(query) || query === '');
+            renderEmojiGridContent(filtered);
+        });
+    }
+}
+
+function renderEmojiGrid(category) {
+    const emojis = emojiCategories[category] || emojiCategories.all;
+    renderEmojiGridContent(emojis);
+}
+
+function renderEmojiGridContent(emojis) {
+    const grid = document.getElementById('emoji-grid');
+    if (grid) {
+        grid.innerHTML = emojis.map(emoji => 
+            `<button class="emoji-item w-10 h-10 hover:bg-green-100 rounded-lg transition-colors text-xl flex items-center justify-center" onclick="insertEmoji('${emoji}')">${emoji}</button>`
+        ).join('');
+    }
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('message-input');
+    if (input) {
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+        input.value = text.substring(0, start) + emoji + text.substring(end);
+        input.selectionStart = input.selectionEnd = start + emoji.length;
+        input.focus();
+        sendTypingIndicator();
+    }
+    document.getElementById('emoji-picker').classList.add('hidden');
+    emojiPickerVisible = false;
+}
+
+function initSocket() {
+    if (typeof io !== 'undefined') {
+        socket = io({ transports: ['websocket', 'polling'] });
+        socket.on('connect', () => {
+            console.log('Socket connected');
+            socket.emit('join_conversation', { conversation_id: conversationId });
+        });
+        socket.on('new_message', (data) => {
+            if (data.conversation_id === conversationId) {
+                appendMessage(data.message_data);
+                scrollToBottom();
+                if (data.message_data.id > lastMessageId) lastMessageId = data.message_data.id;
+            }
+        });
+        socket.on('typing', (data) => {
+            if (data.conversation_id === conversationId && data.user_id !== currentUserId) {
+                showTypingIndicator(data.user_name);
+            }
+        });
+        socket.on('message_edited', (data) => {
+            if (data.conversation_id === conversationId) {
+                const contentDiv = document.querySelector(`#message-content-${data.message_id} p`);
+                if (contentDiv) {
+                    contentDiv.innerHTML = escapeHtml(data.new_content);
+                }
+                const editedSpan = document.querySelector(`#message-content-${data.message_id} .edited-indicator`);
+                if (!editedSpan && data.is_edited) {
+                    const editIndicator = document.createElement('span');
+                    editIndicator.className = 'text-xs opacity-70 mt-1 block edited-indicator';
+                    editIndicator.textContent = '(edited)';
+                    document.getElementById(`message-content-${data.message_id}`).appendChild(editIndicator);
+                }
+            }
+        });
+        socket.on('message_deleted', (data) => {
+            if (data.conversation_id === conversationId) {
+                const messageElement = document.querySelector(`.message-item[data-message-id="${data.message_id}"]`);
+                if (messageElement) {
+                    messageElement.remove();
+                }
+            }
+        });
+    }
+}
+
+function sendTypingIndicator() {
+    if (socket && socket.connected && !isTyping) {
+        isTyping = true;
+        socket.emit('typing', { conversation_id: conversationId, user_id: currentUserId, user_name: currentUserName });
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => { isTyping = false; }, 3000);
+    }
+}
+
+function showTypingIndicator(userName) {
+    const typingDiv = document.getElementById('typing-indicator');
+    if (typingDiv) {
+        typingDiv.innerHTML = `<div class="flex items-center space-x-2"><span>${escapeHtml(userName)} is typing</span><div class="typing-dots flex space-x-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay:0s"></span><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay:0.2s"></span><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style="animation-delay:0.4s"></span></div></div>`;
+        typingDiv.classList.remove('hidden');
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => typingDiv.classList.add('hidden'), 3000);
+    }
+}
+
+function appendMessage(msg) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+    
+    const isOwn = msg.sender_id === currentUserId;
+    const isEdited = msg.is_edited === true;
+    const timeAgo = msg.formatted_time || 'Just now';
+    
+    let contentHtml = '';
+    if (msg.message_type === 'image') {
+        contentHtml = `<img src="/static/uploads/messages/${msg.file_path}" class="max-w-xs rounded-lg cursor-pointer" onclick="openImageViewer(this.src)">`;
+    } else if (msg.message_type === 'file') {
+        contentHtml = `<a href="/static/uploads/messages/${msg.file_path}" class="flex items-center space-x-2 text-sm" download>
+                        <i class="fas fa-file-alt text-lg"></i>
+                        <span>${escapeHtml(msg.file_name)}</span>
+                      </a>`;
+    } else {
+        contentHtml = `
+            <div id="message-content-${msg.id}" class="message-content-view">
+                <p class="text-sm whitespace-pre-wrap break-words">${escapeHtml(msg.content)}</p>
+                ${isEdited ? '<span class="text-xs opacity-70 mt-1 block edited-indicator">(edited)</span>' : ''}
+            </div>
+            <div id="message-edit-${msg.id}" class="message-edit-view hidden mt-1">
+                <textarea id="edit-text-${msg.id}" class="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500" rows="2">${escapeHtml(msg.content)}</textarea>
+                    <button onclick="saveMessageEdit(${msg.id})" class="px-2 py-1 bg-green-500 text-white rounded text-xs">Save</button>
+                    <button onclick="cancelMessageEdit(${msg.id})" class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">Cancel</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    const div = document.createElement('div');
+    div.className = `flex ${isOwn ? 'justify-end' : ''} message-item group`;
+    div.setAttribute('data-message-id', msg.id);
+    div.setAttribute('data-sender-id', msg.sender_id);
+    div.setAttribute('data-created-at', msg.created_at);
+    
+    div.innerHTML = `
+        <div class="flex items-start space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}">
+            ${!isOwn ? `
+            <a href="/profile/${msg.sender_id}" class="flex-shrink-0">
+                <div class="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-white text-xs shadow-sm">
+                    ${msg.sender_avatar ? `<img src="${msg.sender_avatar}" class="w-full h-full rounded-full object-cover">` : (msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : 'U')}
+                </div>
+            </a>
+            ` : ''}
+            <div class="relative">
+                <div class="px-3 py-2 rounded-lg ${isOwn ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700'} shadow-sm">
+                    ${contentHtml}
+                </div>
+                <p class="text-xs text-gray-400 mt-1 ml-1">${timeAgo}</p>
+            </div>
+            ${isOwn ? `
+            <div class="message-menu flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="editMessage(${msg.id})" class="text-gray-400 hover:text-blue-500 transition text-sm p-1" title="Edit message">
+                    <i class="fas fa-pencil-alt text-xs"></i>
+                </button>
+                <button onclick="deleteMessage(${msg.id})" class="text-gray-400 hover:text-red-500 transition text-sm p-1" title="Delete message">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    container.appendChild(div);
+}
+
+function editMessage(messageId) {
+    const viewDiv = document.getElementById(`message-content-${messageId}`);
+    const editDiv = document.getElementById(`message-edit-${messageId}`);
+    if (viewDiv && editDiv) {
+        viewDiv.classList.add('hidden');
+        editDiv.classList.remove('hidden');
+        const textarea = document.getElementById(`edit-text-${messageId}`);
+        if (textarea) {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+    }
+}
+
+function cancelMessageEdit(messageId) {
+    const viewDiv = document.getElementById(`message-content-${messageId}`);
+    const editDiv = document.getElementById(`message-edit-${messageId}`);
+    if (viewDiv && editDiv) {
+        viewDiv.classList.remove('hidden');
+        editDiv.classList.add('hidden');
+    }
+}
+
+async function saveMessageEdit(messageId) {
+    const textarea = document.getElementById(`edit-text-${messageId}`);
+    const newContent = textarea.value.trim();
+    
+    if (!newContent) {
+        showToast('Message cannot be empty', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/messages/api/message/${messageId}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ content: newContent })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const contentDiv = document.querySelector(`#message-content-${messageId} p`);
+            if (contentDiv) {
+                contentDiv.innerHTML = escapeHtml(newContent);
+            }
+            const editedSpan = document.querySelector(`#message-content-${messageId} .edited-indicator`);
+            if (!editedSpan) {
+                const editIndicator = document.createElement('span');
+                editIndicator.className = 'text-xs opacity-70 mt-1 block edited-indicator';
+                editIndicator.textContent = '(edited)';
+                document.getElementById(`message-content-${messageId}`).appendChild(editIndicator);
+            }
+            cancelMessageEdit(messageId);
+            showToast('Message updated', 'success');
+        } else {
+            showToast(data.message || 'Failed to edit message', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to edit message', 'error');
+    }
+}
+
+async function deleteMessage(messageId) {
+    if (!confirm('Are you sure you want to delete this message? This cannot be undone.')) return;
+    
+    try {
+        const response = await fetch(`/messages/api/message/${messageId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const messageElement = document.querySelector(`.message-item[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                messageElement.style.transition = 'opacity 0.3s ease';
+                messageElement.style.opacity = '0';
+                setTimeout(() => messageElement.remove(), 300);
+            }
+            showToast('Message deleted', 'success');
+        } else {
+            showToast(data.message || 'Failed to delete message', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to delete message', 'error');
+    }
+}
+
+async function sendMessage() {
+    const input = document.getElementById('message-input');
+    const content = input.value.trim();
+    if (!content) return;
+    const btn = document.getElementById('send-button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    try {
+        const formData = new FormData();
+        formData.append('content', content);
+        const res = await fetch(`/messages/send_message/${conversationId}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            input.value = '';
+            appendMessage(data.message_data);
+            scrollToBottom();
+            if (data.message_data.id > lastMessageId) lastMessageId = data.message_data.id;
+        } else showToast(data.message || 'Error', 'error');
+    } catch(e) { showToast('Failed to send', 'error');
+    } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send'; input.focus(); }
+}
+
+async function uploadFile(file) {
+    const btn = document.getElementById('send-button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`/messages/upload_file/${conversationId}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            appendMessage(data.message_data);
+            scrollToBottom();
+            if (data.message_data.id > lastMessageId) lastMessageId = data.message_data.id;
+        } else showToast(data.message || 'Error', 'error');
+    } catch(e) { showToast('Upload failed', 'error');
+    } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send'; }
+}
+
+function scrollToBottom() { 
+    const c = document.getElementById('messages-container'); 
+    if (c) c.scrollTop = c.scrollHeight; 
+}
+
+function pollMessages() {
+    fetch(`/messages/api/conversation/${conversationId}/messages`).then(r => r.json()).then(data => {
+        if (data.success && data.messages) {
+            const last = data.messages[data.messages.length - 1];
+            if (last && last.id > lastMessageId) {
+                data.messages.forEach(m => { if (m.id > lastMessageId) { appendMessage(m); lastMessageId = m.id; } });
+                scrollToBottom();
+            }
+        }
+    }).catch(e => console.error(e));
+}
+
+function openImageViewer(src) { document.getElementById('viewerImage').src = src; document.getElementById('imageViewer').classList.remove('hidden'); }
+function closeImageViewer() { document.getElementById('imageViewer').classList.add('hidden'); }
+function showToast(msg, type) { const toast = document.createElement('div'); toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white text-sm z-50 ${type === 'success' ? 'bg-green-600' : 'bg-red-500'}`; toast.textContent = msg; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+function openNewMessageModal() { document.getElementById('newMessageModal').classList.remove('hidden'); document.getElementById('search-user-input').focus(); document.getElementById('search-results').innerHTML = ''; }
+function closeNewMessageModal() { document.getElementById('newMessageModal').classList.add('hidden'); document.getElementById('search-user-input').value = ''; }
+
+document.getElementById('search-contacts')?.addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    document.querySelectorAll('.contact-item').forEach(item => {
+        const name = item.getAttribute('data-contact-name') || '';
+        item.style.display = (query === '' || name.includes(query)) ? 'block' : 'none';
+    });
+});
+
+let searchTimeout;
+document.getElementById('search-user-input')?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    if (query.length < 2) { document.getElementById('search-results').innerHTML = ''; return; }
+    searchTimeout = setTimeout(() => {
+        fetch(`/messages/search_users?q=${encodeURIComponent(query)}`).then(r => r.json()).then(data => {
+            const results = document.getElementById('search-results');
+            if (!data.users.length) { results.innerHTML = '<p class="text-center text-gray-500 py-4">No users found</p>'; return; }
+            results.innerHTML = data.users.map(u => `<div class="flex items-center justify-between p-2 hover:bg-green-50 rounded-lg"><div class="flex items-center space-x-2"><a href="/profile/${u.id}" class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold">${u.name.charAt(0).toUpperCase()}</a><div><a href="/profile/${u.id}" class="font-medium text-sm text-gray-900 hover:text-green-600">${escapeHtml(u.name)}</a><p class="text-xs text-gray-500">${escapeHtml(u.email)}</p></div></div><a href="/messages/start_conversation/${u.id}" class="px-2 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">Message</a></div>`).join('');
+        }).catch(e => console.error(e));
+    }, 300);
+});
+
+const msgInput = document.getElementById('message-input');
+if (msgInput) {
+    msgInput.addEventListener('input', sendTypingIndicator);
+    msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+}
+document.getElementById('send-button')?.addEventListener('click', sendMessage);
+document.getElementById('attach-button')?.addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input')?.addEventListener('change', (e) => { if (e.target.files[0]) uploadFile(e.target.files[0]); this.value = ''; });
+
+let emojiPickerVisible = false;
+document.getElementById('emoji-button')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const picker = document.getElementById('emoji-picker');
+    if (emojiPickerVisible) picker.classList.add('hidden');
+    else { picker.classList.remove('hidden'); renderEmojiGrid(currentEmojiCategory); }
+    emojiPickerVisible = !emojiPickerVisible;
+});
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#emoji-button') && !e.target.closest('#emoji-picker')) {
+        document.getElementById('emoji-picker')?.classList.add('hidden');
+        emojiPickerVisible = false;
+    }
+});
+
+function init() { 
+    initSocket(); 
+    initEmojiPicker(); 
+    scrollToBottom(); 
+    messagePollInterval = setInterval(pollMessages, 3000); 
+    document.getElementById('message-input')?.focus(); 
+}
+
+window.addEventListener('beforeunload', () => { 
+    if (messagePollInterval) clearInterval(messagePollInterval); 
+    if (socket) socket.disconnect(); 
+});
+
+init();
+
+document.addEventListener('keydown', (e) => { 
+    if (e.key === 'Escape') { 
+        closeImageViewer(); 
+        closeNewMessageModal(); 
+    } 
+});
+</script>
+
+<style>
+.message-item { transition: all 0.2s ease; }
+.typing-dots span { animation: bounce 1.4s infinite ease-in-out both; }
+@keyframes bounce { 0%,80%,100% { transform: scale(0); } 40% { transform: scale(1); } }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.emoji-item:hover { transform: scale(1.15); background-color: #e5f7e5; }
+.message-menu { opacity: 0; transition: opacity 0.2s ease; }
+.message-item:hover .message-menu { opacity: 1; }
+.message-edit-input { min-width: 200px; }
+.message-edit-input:focus { outline: none; ring: 2px solid #4CAF50; }
+
+/* Force long words to break and wrap */
+.break-words {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
+}
+</style>
+{% endblock %}

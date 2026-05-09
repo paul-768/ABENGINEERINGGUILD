@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">ABE Applications</h1>
+        <p class="text-gray-600 mt-2">Access our suite of Agricultural and Biosystems Engineering applications</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- PAES App - YELLOW -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-mobile-alt text-yellow-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">PAES App</h3>
+            </div>
+            <p class="text-gray-600 mb-4">Download our version of PAES App for Android.</p>
+            <a href="https://drive.google.com/drive/folders/1Iz95I_4rURU5b5E-Q3UpiJCo_liHmcUj?usp=drive_link" target="_blank" 
+               class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+                <i class="fas fa-download mr-2"></i>
+                Download App
+            </a>
+        </div>
+
+        <!-- Open Channels Calculator - BLUE -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-calculator text-blue-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Open Channels Calculator</h3>
+            </div>
+            <p class="text-gray-600 mb-4">Tools for open channel flow calculations and design.</p>
+            <a href="https://drive.google.com/drive/folders/1JNe2EU8gbo1uKdaEa7y1dXrH0cqTwtrf?usp=sharing" target="_blank" 
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-download mr-2"></i>
+                Download App
+            </a>
+        </div>
+
+        <!-- Farm Machinery Calculator - GREEN -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-tractor text-green-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Farm Machinery Calculator</h3>
+            </div>
+            <p class="text-gray-600 mb-4">Tools for farm machinery selection and calculations.</p>
+            <a href="https://drive.google.com/drive/folders/1uv3hjK_Vg5-fr7K5IaJ2kCwOsZHwQRxV?usp=drive_link" target="_blank" 
+               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-download mr-2"></i>
+                Download App
+            </a>
+        </div>
+    </div>
+
+    <!-- Note Section -->
+    <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-center">
+            <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+            <div>
+                <h4 class="font-medium text-blue-800">Download Instructions</h4>
+                <p class="text-sm text-blue-700">
+                    Click on "Download App" to access the Google Drive link for each application. 
+                    Make sure to download the APK file and install it on your Android device.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

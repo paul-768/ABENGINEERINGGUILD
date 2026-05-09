@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Performance Analytics</h1>
+
+    <!-- Multi-Subject Progress Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Topic Performance (Last 7 Days)</h2>
+        <div class="chart-container">
+            <canvas id="subjectProgressChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Progress Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Daily Average Score (Last 7 Days)</h2>
+        <div class="chart-container">
+            <canvas id="progressChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Topic Performance -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Learning Progress Guide</h2>
+            <div class="space-y-4">
+                {% for topic in topic_performance %}
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-medium text-sm text-gray-700 dark:text-gray-300">{{ topic.name }}</span>
+                        <span class="text-xs font-medium 
+                            {% if topic.score >= 90 %}text-blue-700 dark:text-blue-400
+                            {% elif topic.score >= 75 %}text-purple-700 dark:text-purple-400
+                            {% elif topic.score >= 60 %}text-green-700 dark:text-green-400
+                            {% elif topic.score >= 40 %}text-yellow-700 dark:text-yellow-400
+                            {% else %}text-red-700 dark:text-red-400{% endif %}">
+                            {{ "%.1f"|format(topic.score) }}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div class="h-2.5 rounded-full 
+                            {% if topic.score >= 90 %}bg-blue-600
+                            {% elif topic.score >= 75 %}bg-purple-600
+                            {% elif topic.score >= 60 %}bg-green-500
+                            {% elif topic.score >= 40 %}bg-yellow-500
+                            {% else %}bg-red-600{% endif %}" 
+                            style="width: {{ topic.score }}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ topic.quiz_count }} quiz{{ 'zes' if topic.quiz_count != 1 else '' }} taken</div>
+                </div>
+                {% else %}
+                <p class="text-gray-600 dark:text-gray-400 text-center py-4">No quiz data available. Take some quizzes to see your mastery progress!</p>
+                {% endfor %}
+            </div>
+
+            <!-- Mastery Legend -->
+            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-200">Mastery Levels:</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Excellent (90-100%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-yellow-500 rounded mr-2"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Needs Improvement (40-59%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-purple-600 rounded mr-2"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Good (75-89%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-600 rounded mr-2"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Poor (0-39%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Average (60-74%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Study Recommendations</h2>
+            {% if weak_areas %}
+                <div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                    <h3 class="font-bold text-yellow-800 dark:text-yellow-400 mb-2">Focus Areas</h3>
+                    <p class="text-yellow-700 dark:text-yellow-500">Based on your performance, we recommend focusing on these topics:</p>
+                    <ul class="list-disc list-inside mt-2 text-yellow-700 dark:text-yellow-500">
+                        {% for topic in weak_areas %}
+                        <li>{{ topic.name }} ({{ "%.1f"|format(topic.score) }}%)</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="space-y-2">
+                    {% for topic in weak_areas %}
+                    <a href="{{ url_for('reviewer.topic_detail', topic_id=topic.id) }}" 
+                       class="block bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 p-3 rounded-lg transition-colors border border-green-200 dark:border-green-800">
+                        <div class="flex items-center">
+                            <i class="fas fa-book text-green-600 dark:text-green-400 mr-3"></i>
+                            <span class="font-medium text-sm text-gray-700 dark:text-gray-300">Study {{ topic.name }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <h3 class="font-bold text-green-800 dark:text-green-400 mb-2">Great Job!</h3>
+                    <p class="text-green-700 dark:text-green-500">You're performing well across all topics. Keep up the good work!</p>
+                </div>
+                {% if strong_areas %}
+                <div class="mt-4">
+                    <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-200">Continue Mastering:</h3>
+                    <div class="space-y-2">
+                        {% for topic in strong_areas %}
+                        <a href="{{ url_for('reviewer.topic_detail', topic_id=topic.id) }}" 
+                           class="block bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 p-3 rounded-lg transition-colors border border-blue-200 dark:border-blue-800">
+                            <div class="flex items-center">
+                                <i class="fas fa-star text-blue-600 dark:text-blue-400 mr-3"></i>
+                                <span class="font-medium text-sm text-gray-700 dark:text-gray-300">Master {{ topic.name }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to get chart colors based on theme
+        function getChartColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                gridColor: isDark ? 'rgba(75, 85, 99, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+                tickColor: isDark ? '#9ca3af' : '#6b7280',
+                titleColor: isDark ? '#f3f4f6' : '#374151'
+            };
+        }
+
+        // Daily Average Score chart
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        const colors = getChartColors();
+        
+        const progressData = {
+            labels: {{ progress_data.dates | tojson }},
+            datasets: [{
+                label: 'Daily Average Score (%)',
+                data: {{ progress_data.averages | tojson }},
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointBackgroundColor: '#10B981',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        };
+        
+        window.progressChart = new Chart(ctx, {
+            type: 'line',
+            data: progressData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            },
+                            color: colors.tickColor
+                        },
+                        title: {
+                            display: true,
+                            text: 'Score (%)',
+                            color: colors.titleColor
+                        },
+                        grid: {
+                            color: colors.gridColor
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            color: colors.titleColor
+                        },
+                        ticks: {
+                            color: colors.tickColor
+                        },
+                        grid: {
+                            color: colors.gridColor
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: colors.tickColor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Multi-topic progress chart
+        const subjectCtx = document.getElementById('subjectProgressChart').getContext('2d');
+        const subjectColors = getChartColors();
+        
+        const subjectProgressData = {
+            labels: {{ subject_progress_data.dates | tojson }},
+            datasets: [
+                {
+                    label: 'AREA I',
+                    data: {{ subject_progress_data.area_i | tojson }},
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'AREA II',
+                    data: {{ subject_progress_data.area_ii | tojson }},
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'AREA III',
+                    data: {{ subject_progress_data.area_iii | tojson }},
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Engineering Mathematics',
+                    data: {{ subject_progress_data.engineering_math | tojson }},
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'PAES Standards',
+                    data: {{ subject_progress_data.paes | tojson }},
+                    borderColor: '#EC4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        };
+        
+        window.subjectChart = new Chart(subjectCtx, {
+            type: 'line',
+            data: subjectProgressData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            },
+                            color: subjectColors.tickColor
+                        },
+                        title: {
+                            display: true,
+                            text: 'Score (%)',
+                            color: subjectColors.titleColor
+                        },
+                        grid: {
+                            color: subjectColors.gridColor
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date',
+                            color: subjectColors.titleColor
+                        },
+                        ticks: {
+                            color: subjectColors.tickColor
+                        },
+                        grid: {
+                            color: subjectColors.gridColor
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: subjectColors.tickColor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Listen for theme changes to update chart colors
+        window.addEventListener('themeChanged', function(e) {
+            const newColors = getChartColors();
+            
+            if (window.progressChart) {
+                window.progressChart.options.scales.y.ticks.color = newColors.tickColor;
+                window.progressChart.options.scales.x.ticks.color = newColors.tickColor;
+                window.progressChart.options.scales.y.title.color = newColors.titleColor;
+                window.progressChart.options.scales.x.title.color = newColors.titleColor;
+                window.progressChart.options.scales.y.grid.color = newColors.gridColor;
+                window.progressChart.options.scales.x.grid.color = newColors.gridColor;
+                window.progressChart.options.plugins.legend.labels.color = newColors.tickColor;
+                window.progressChart.update();
+            }
+            
+            if (window.subjectChart) {
+                window.subjectChart.options.scales.y.ticks.color = newColors.tickColor;
+                window.subjectChart.options.scales.x.ticks.color = newColors.tickColor;
+                window.subjectChart.options.scales.y.title.color = newColors.titleColor;
+                window.subjectChart.options.scales.x.title.color = newColors.titleColor;
+                window.subjectChart.options.scales.y.grid.color = newColors.gridColor;
+                window.subjectChart.options.scales.x.grid.color = newColors.gridColor;
+                window.subjectChart.options.plugins.legend.labels.color = newColors.tickColor;
+                window.subjectChart.update();
+            }
+        });
+
+        // Animate progress bars
+        const progressBars = document.querySelectorAll('.bg-green-600, .bg-blue-600, .bg-yellow-500, .bg-orange-500, .bg-red-600, .bg-cyan-500, .bg-purple-600');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+                bar.style.transition = 'width 1s ease-in-out';
+            }, 100);
+        });
+    });
+</script>
+
+<style>
+    .container {
+        max-width: 1200px;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}

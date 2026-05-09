@@ -1,0 +1,1699 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Welcome Banner with Streak & Rank -->
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg shadow-md mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold mb-2">Hello Bayaw, {{ current_user.name }}!</h1>
+            <p class="text-green-100">Transform from novice to know-it-all in the fields of knowledge!</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <!-- Streak -->
+            <div class="flex flex-col items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-fire text-orange-300 text-2xl mr-2" aria-hidden="true"></i>
+                    <span class="text-xl font-bold">{{ streak or 0 }}</span>
+                </div>
+                <p class="text-green-100 text-xs">Day Streak</p>
+            </div>
+            <!-- Rank -->
+            <div class="flex flex-col items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-medal text-yellow-300 text-2xl mr-2" aria-hidden="true"></i>
+                    <span class="text-xl font-bold">
+                        {% if user_rank == "Unranked" or user_rank == "N/A" %}-{% else %}#{{ user_rank }}{% endif %}
+                    </span>
+                </div>
+                <p class="text-green-100 text-xs">Rank</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <!-- Quizzes Completed -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-5 rounded-xl shadow-md">
+            <div class="flex items-center">
+                <div class="p-3 bg-white/20 rounded-full mr-4" aria-hidden="true">
+                    <i class="fas fa-check-circle text-white text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold">{{ total_quizzes }}</h3>
+                    <p class="text-green-100 text-sm">Quizzes Completed</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Score -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-5 rounded-xl shadow-md">
+            <div class="flex items-center">
+                <div class="p-3 bg-white/20 rounded-full mr-4" aria-hidden="true">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold">{{ average_score }}%</h3>
+                    <p class="text-blue-100 text-sm">Overall Score</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attempts Today -->
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-5 rounded-xl shadow-md">
+            <div class="flex items-center">
+                <div class="p-3 bg-white/20 rounded-full mr-4" aria-hidden="true">
+                    <i class="fas fa-clipboard-list text-white text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold">{{ attempts_today }}</h3>
+                    <p class="text-purple-100 text-sm">Attempts Today</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Rank -->
+        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-5 rounded-xl shadow-md">
+            <div class="flex items-center">
+                <div class="p-3 bg-white/20 rounded-full mr-4" aria-hidden="true">
+                    <i class="fas fa-trophy text-white text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold">
+                        {% if user_rank == "Unranked" or user_rank == "N/A" %}-{% else %}#{{ user_rank }}{% endif %}
+                    </h3>
+                    <p class="text-amber-100 text-sm">Your Rank</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid: Progress Chart & Topic Mastery -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6"> 
+        <!-- Performance Progress Chart (2/3 width on large screens) -->
+        <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-2"> 
+            <h2 class="text-xl font-bold mb-4">Performance Progress (Last 7 Days)</h2>
+            
+            <!-- Add chart status element (this was missing!) -->
+            <div id="chartStatus" class="text-sm text-gray-500 mb-3">
+                <i class="fas fa-chart-line mr-1"></i> Loading chart data...
+            </div>
+            
+            <div style="height: 350px; position: relative;">
+                <canvas id="performanceChart" style="width: 100%; height: 100%;"></canvas>
+            </div>
+            
+            <!-- Chart Controls -->
+            <div class="mt-4 flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Your daily quiz performance over the last 7 days
+                </div>
+            </div>
+        </div>
+        <!-- Topic Mastery (1/3 width on large screens) -->
+        <div class="bg-white p-6 rounded-lg shadow-md"> 
+            <h2 class="text-xl font-bold mb-4">Topic Mastery</h2>
+            <div class="space-y-4">
+                {% for topic_score in topic_scores %}
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-medium text-sm">{{ topic_score.topic.name }}</span>
+                        <span class="text-xs font-medium 
+                            {% if topic_score.rating == 'Excellent' %}text-blue-600
+                            {% elif topic_score.rating == 'Very Good' %}text-purple-600
+                            {% elif topic_score.rating == 'Good' %}text-green-600
+                            {% elif topic_score.rating == 'Fair' %}text-yellow-600
+                            {% elif topic_score.rating == 'Poor' %}text-red-600
+                            {% else %}text-gray-500{% endif %}">
+                            {{ topic_score.score }}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="h-2.5 rounded-full score-meter {{ topic_score.color }}" 
+                             style="width: {{ topic_score.score }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Mastery Legend -->
+            <div class="mt-6 pt-4 border-t border-gray-200">
+                <h3 class="text-sm font-semibold mb-2">Mastery Levels:</h3>
+                <div class="grid grid-cols-1 gap-1 text-xs">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-blue-500 rounded mr-2"></div>
+                        <span>Excellent (91-100%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-purple-500 rounded mr-2"></div>
+                        <span>Very Good (81-90%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                        <span>Good (51-80%)</span>  
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-yellow-500 rounded mr-2"></div>
+                        <span>Fair (31-50%)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-500 rounded mr-2"></div>
+                        <span>Poor (0-30%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Achievements Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Recent Activity -->
+        <div class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">Recent Activity</h2>
+            <div class="h-80 overflow-y-auto custom-scrollbar">
+                <div class="space-y-4">
+                    {% if quiz_results %}
+                        {% for result in quiz_results %}
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex-1">
+                                <p class="font-medium text-sm text-gray-800">Completed "{{ result.topic.name }}" quiz</p>
+                                {% if result.completed_at %}
+                                <p class="text-xs text-gray-600">{{ result.completed_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium ml-2">
+                                {{ result.score }}%
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-600 text-center py-8">No recent activity. Take a quiz to get started!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements Section (Updated) -->
+<div class="bg-white p-6 rounded-xl shadow-md">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">
+            <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+            Achievements
+        </h2>
+        <a href="{{ url_for('achievements.index') }}" class="text-sm text-green-600 hover:text-green-700">
+            View All <i class="fas fa-arrow-right ml-1"></i>
+        </a>
+    </div>
+    <div id="dashboard-achievements" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+        <div class="text-center py-8">
+            <i class="fas fa-spinner fa-spin text-green-500 text-2xl"></i>
+            <p class="text-gray-500 text-sm mt-2">Loading achievements...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Interactive Calendar & Reminders -->
+<div class="bg-white rounded-xl shadow-md overflow-hidden mt-6">
+    <div class="flex">
+        <!-- Calendar Section -->
+        <div class="flex-1 p-3 border-r border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-md font-bold text-gray-800">Study Calendar</h2>
+                <div class="flex gap-1">
+                    <button onclick="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-chevron-left text-gray-600 text-sm"></i>
+                    </button>
+                    <button onclick="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-chevron-right text-gray-600 text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Month Header -->
+            <div class="text-center mb-2">
+                <h3 class="text-lg font-semibold text-gray-800" id="current-month">Nov 2025</h3>
+            </div>
+
+            <!-- Week Days Header -->
+            <div class="grid grid-cols-7 gap-0.5 mb-1 text-xs">
+                <div class="text-center font-medium text-blue-600 py-1">M</div>
+                <div class="text-center font-medium text-blue-600 py-1">T</div>
+                <div class="text-center font-medium text-blue-600 py-1">W</div>
+                <div class="text-center font-medium text-blue-600 py-1">T</div>
+                <div class="text-center font-medium text-blue-600 py-1">F</div>
+                <div class="text-center font-medium text-orange-500 py-1">S</div>
+                <div class="text-center font-medium text-orange-500 py-1">S</div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div id="calendar-grid" class="grid grid-cols-7 gap-0.5 mb-4">
+                <!-- Calendar days will be populated by JavaScript -->
+            </div>
+
+            <!-- Quick Stats Under Calendar -->
+            <div class="space-y-3">
+                <!-- Study Streak -->
+                <div class="bg-white p-3 rounded-lg border border-purple-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-fire text-purple-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">Study Streak</p>
+                                <p class="text-sm font-bold text-purple-700" id="study-streak">3 days</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Best: {{ best_streak|default(streak) }} days</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Study Session -->
+                <div class="bg-white p-3 rounded-lg border border-green-200">
+                    <h4 class="text-xs font-semibold text-gray-700 mb-2">Quick Study Session</h4>
+                    <div class="grid grid-cols-3 gap-1 mb-2">
+                        <button onclick="startQuickSession(15)" class="bg-white border border-green-300 text-green-700 text-xs py-1 rounded hover:bg-green-50 transition-colors">
+                            15min
+                        </button>
+                        <button onclick="startQuickSession(30)" class="bg-white border border-green-300 text-green-700 text-xs py-1 rounded hover:bg-green-50 transition-colors">
+                            30min
+                        </button>
+                        <button onclick="startQuickSession(45)" class="bg-white border border-green-300 text-green-700 text-xs py-1 rounded hover:bg-green-50 transition-colors">
+                            45min
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                        <i class="fas fa-clock text-green-500"></i>
+                        <span id="quick-session-timer" class="font-mono">00:00</span>
+                        <button onclick="stopQuickSession()" class="ml-auto text-red-500 hover:text-red-700 text-xs hidden" id="stop-session-btn">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Study Tips -->
+                <div class="bg-white p-3 rounded-lg border border-blue-200">
+                    <h4 class="text-xs font-semibold text-gray-700 mb-2">Study Tip</h4>
+                    <p class="text-xs text-gray-600 italic" id="study-tip">"Take regular breaks - try the Pomodoro technique!"</p>
+                    <button onclick="nextStudyTip()" class="text-blue-500 hover:text-blue-700 text-xs mt-1">
+                        <i class="fas fa-sync-alt mr-1"></i>Next tip
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Reminders Section -->
+        <div class="w-80 bg-white">
+            <!-- Top Section: Reminders -->
+            <div class="p-4 border-b border-green-200">
+                <!-- Header with Alarm Status -->
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-semibold text-gray-800">Study Reminders</h3>
+                        <div id="alarm-status" class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <button onclick="openCalendarModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Session</span>
+                    </button>
+                </div>
+
+                <!-- Selected Date Info with Progress -->
+                <div id="selected-date-info" class="mb-4 p-3 bg-white rounded-lg shadow-sm border border-green-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-semibold text-green-800 text-sm mb-0.5" id="selected-date">Today, Nov 12</h4>
+                            <p class="text-xs text-green-600" id="selected-date-full">Wednesday, Nov 12, 2025</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-500">Study Progress</div>
+                            <div class="text-sm font-bold text-green-600" id="daily-progress">0/0</div>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div id="progress-bar" class="bg-green-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Active Reminders with Countdown -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-semibold text-gray-700">Today's Sessions</h4>
+                        <span id="session-count" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    
+                    <div id="reminders-list" class="space-y-2 max-h-32 overflow-y-auto">
+                        <!-- Reminders will be populated by JavaScript -->
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-plus text-green-200 text-xl mb-2"></i>
+                            <p class="text-green-500 text-xs">No study sessions today</p>
+                            <p class="text-green-400 text-xs mt-1">Add your first session!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Session Countdown -->
+                <div id="next-session-alert" class="hidden mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fas fa-clock text-yellow-600"></i>
+                        <span class="text-xs font-semibold text-yellow-800">Next Session</span>
+                    </div>
+                    <div class="text-lg font-bold text-yellow-700 text-center mb-1" id="countdown-timer">00:00</div>
+                    <p class="text-xs text-yellow-600 text-center truncate" id="next-session-title">Session Title</p>
+                </div>
+            </div>
+
+            <!-- Bottom Section: Quick Actions -->
+            <div class="p-4">
+                <h3 class="text-sm font-semibold text-gray-800 mb-3">Quick Actions</h3>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="snoozeAllReminders()" class="flex items-center gap-1 p-2 bg-white border border-gray-200 rounded text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-bell-slash text-gray-500"></i>
+                        <span>Snooze All</span>
+                    </button>
+                    <button onclick="markAllCompleted()" class="flex items-center gap-1 p-2 bg-white border border-gray-200 rounded text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-check-circle text-green-500"></i>
+                        <span>Complete All</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Notes Section -->
+<div class="bg-white rounded-xl shadow-md p-6 mt-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">Quick Notes</h2>
+        <button onclick="addNewNote()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>Add Note</span>
+        </button>
+    </div>
+
+    <!-- Notes Color Palette -->
+    <div class="flex gap-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 overflow-x-auto">
+        <span class="text-sm text-gray-600 mr-2 whitespace-nowrap">Note Colors:</span>
+        <button onclick="setNoteColor('bg-yellow-100', 'border-yellow-300')" class="w-6 h-6 bg-yellow-100 border border-yellow-300 rounded hover:scale-110 transition-transform flex-shrink-0"></button>
+        <button onclick="setNoteColor('bg-blue-100', 'border-blue-300')" class="w-6 h-6 bg-blue-100 border border-blue-300 rounded hover:scale-110 transition-transform flex-shrink-0"></button>
+        <button onclick="setNoteColor('bg-green-100', 'border-green-300')" class="w-6 h-6 bg-green-100 border border-green-300 rounded hover:scale-110 transition-transform flex-shrink-0"></button>
+        <button onclick="setNoteColor('bg-pink-100', 'border-pink-300')" class="w-6 h-6 bg-pink-100 border border-pink-300 rounded hover:scale-110 transition-transform flex-shrink-0"></button>
+        <button onclick="setNoteColor('bg-purple-100', 'border-purple-300')" class="w-6 h-6 bg-purple-100 border border-purple-300 rounded hover:scale-110 transition-transform flex-shrink-0"></button>
+    </div>
+
+<!-- Sticky Notes Container with Fixed Height and Scrollbar -->
+<div id="sticky-notes-wrapper" style="height: 380px; overflow-y: auto;" class="custom-scrollbar">
+    <div id="sticky-notes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Notes will be populated by JavaScript -->
+    </div>
+</div>
+    
+    <!-- Optional: Show note count -->
+    <div id="notes-count" class="text-xs text-gray-400 mt-3 text-center"></div>
+</div>
+
+<!-- Alarm Notification -->
+<div id="alarm-notification" class="fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg hidden z-50 max-w-sm">
+    <div class="flex items-center gap-3">
+        <i class="fas fa-bell-exclamation text-xl animate-bounce"></i>
+        <div class="flex-1">
+            <h4 class="font-bold text-sm">Study Session Alert! 🎯</h4>
+            <p class="text-xs opacity-90" id="alarm-message">It's time for your study session!</p>
+            <p class="text-xs font-semibold mt-1" id="alarm-session-title">Session Title</p>
+        </div>
+        <button onclick="dismissAlarm()" class="text-white hover:text-gray-200">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="flex gap-2 mt-3">
+        <button onclick="snoozeAlarm()" class="flex-1 py-1 px-2 bg-white text-red-600 text-xs rounded font-semibold hover:bg-gray-100">
+            Snooze 5min
+        </button>
+        <button onclick="startSession()" class="flex-1 py-1 px-2 bg-green-600 text-white text-xs rounded font-semibold hover:bg-green-700">
+            Start Now
+        </button>
+    </div>
+</div>
+
+<!-- Advanced Calendar Modal -->
+<div id="calendar-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-xl p-5 w-96 max-w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-800">Schedule Study Session</h3>
+            <button onclick="closeCalendarModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="reminder-form" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="reminder-date" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                    <input type="time" id="reminder-time" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Session Title</label>
+                <input type="text" id="reminder-title" placeholder="e.g., AREA I Quiz Practice" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                <select id="reminder-topic" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="">Select Topic</option>
+                    <option value="AREA I">AREA I - Farm Machinery</option>
+                    <option value="AREA II">AREA II - Soil & Water</option>
+                    <option value="AREA III">AREA III - Post-Harvest</option>
+                    <option value="Engineering Mathematics">Engineering Mathematics</option>
+                    <option value="PAES Standards">PAES Standards</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                <input type="checkbox" id="enable-alarm" class="rounded text-green-600 focus:ring-green-500" checked>
+                <label for="enable-alarm" class="text-sm text-gray-700">Enable alarm notification</label>
+            </div>
+            
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeCalendarModal()" class="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Schedule Session
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div id="note-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-4 w-80 max-w-full mx-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-md font-bold text-gray-800">Add New Note</h3>
+            <button onclick="closeNoteModal()" class="text-gray-500 hover:text-gray-700 text-sm">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="note-form" class="space-y-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Note Title</label>
+                <input type="text" id="note-title" placeholder="Enter note title..." class="w-full p-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-transparent">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Note Content</label>
+                <textarea id="note-content" placeholder="Write your note here..." rows="3" class="w-full p-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-transparent resize-none"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Note Color</label>
+                <div class="flex gap-2">
+                    <button type="button" onclick="selectNoteColor('yellow')" class="note-color-option w-6 h-6 bg-yellow-100 border border-yellow-300 rounded hover:scale-110 transition-transform"></button>
+                    <button type="button" onclick="selectNoteColor('blue')" class="note-color-option w-6 h-6 bg-blue-100 border border-blue-300 rounded hover:scale-110 transition-transform"></button>
+                    <button type="button" onclick="selectNoteColor('green')" class="note-color-option w-6 h-6 bg-green-100 border border-green-300 rounded hover:scale-110 transition-transform"></button>
+                    <button type="button" onclick="selectNoteColor('pink')" class="note-color-option w-6 h-6 bg-pink-100 border border-pink-300 rounded hover:scale-110 transition-transform"></button>
+                    <button type="button" onclick="selectNoteColor('purple')" class="note-color-option w-6 h-6 bg-purple-100 border border-purple-300 rounded hover:scale-110 transition-transform"></button>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 pt-1">
+                <button type="button" onclick="closeNoteModal()" class="flex-1 py-2 px-3 text-sm border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 py-2 px-3 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                    Save Note
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Quick Study Session Timer
+let quickSessionInterval;
+let quickSessionTime = 0;
+
+// ========== SESSION START WITH CHOICE MODAL ==========
+let currentAlarmReminder = null;
+
+function showSessionChoiceModal(reminder) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('session-choice-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Create modal - NEW COLOR SCHEME
+    const modalHtml = `
+        <div id="session-choice-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] animate-fade-in">
+            <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl transform transition-all animate-scale-in">
+                <div class="flex flex-col items-center">
+                    <h3 class="text-xl font-bold text-gray-800">Time to Study! 📚</h3>
+                    <p class="text-gray-500 text-sm mt-1">${reminder ? reminder.title.replace(/[<>]/g, '') : 'Your study session is ready'}</p>
+                </div>
+                
+                <p class="text-gray-600 text-center mb-6">How would you like to study?</p>
+                
+                <div class="space-y-3">
+                    <button onclick="startWithReviewer()" 
+                            class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r from-green-600 to-green-600 hover:from-green-700 hover:to-green-700 text-white rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-md group">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-book-open text-xl group-hover:animate-pulse"></i>
+                            <div class="text-left">
+                                <span class="font-semibold text-base">Reviewer Mode</span>
+                                <p class="text-xs text-teal-100">Study materials & references</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-arrow-right opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></i>
+                    </button>
+                    
+                    <button onclick="startWithQuiz()" 
+                            class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-md group">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-puzzle-piece text-xl group-hover:animate-pulse"></i>
+                            <div class="text-left">
+                                <span class="font-semibold text-base">Quiz Mode</span>
+                                <p class="text-xs text-indigo-100">Test your knowledge</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-arrow-right opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></i>
+                    </button>
+                </div>
+                
+                <button onclick="closeSessionModal()" 
+                        class="w-full mt-4 py-2 text-gray-400 hover:text-gray-600 text-sm transition-colors">
+                    Maybe later
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Add animation styles if not present
+    if (!document.querySelector('#modal-animation-styles')) {
+        const style = document.createElement('style');
+        style.id = 'modal-animation-styles';
+        style.textContent = `
+            @keyframes fade-in-modal {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes scale-in-modal {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            .animate-fade-in { animation: fade-in-modal 0.2s ease-out; }
+            .animate-scale-in { animation: scale-in-modal 0.2s ease-out; }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function closeSessionModal() {
+    const modal = document.getElementById('session-choice-modal');
+    if (modal) modal.remove();
+    window.currentActiveAlarm = null;
+    window.currentActiveAlarmReminder = null;
+}
+
+function startWithReviewer() {
+    closeSessionModal();
+    window.location.href = '/reviewer';
+}
+
+function startWithQuiz() {
+    closeSessionModal();
+    window.location.href = '/quiz/categories';  // Changed from '/quiz/start-quiz'
+}
+
+// Replace the existing startSession function with this one
+function startSession() {
+    const reminder = window.currentActiveAlarm;
+    
+    if (reminder) {
+        dismissAlarm();
+        // Show the choice modal instead of redirecting directly
+        showSessionChoiceModal(reminder);
+    } else {
+        dismissAlarm();
+        // Fallback: if no reminder, show generic modal
+        showSessionChoiceModal({ title: 'Ready to study?' });
+    }
+}
+
+
+function stopQuickSession() {
+    clearInterval(quickSessionInterval);
+    quickSessionTime = 0;
+    updateQuickSessionDisplay();
+    document.getElementById('stop-session-btn').classList.add('hidden');
+}
+
+function updateQuickSessionDisplay() {
+    const minutes = Math.floor(quickSessionTime / 60);
+    const seconds = quickSessionTime % 60;
+    document.getElementById('quick-session-timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Study Tips
+const studyTips = [
+    "Take regular breaks - try the Pomodoro technique!",
+    "Review your notes within 24 hours for better retention",
+    "Use a spaced repetition system to remember information",
+    "Practice active recall instead of passive reading",
+    "Use a study schedule to keep track of your study time",
+    "Set specific, achievable goals for each study session",
+    "Use a study timer to track your study time",
+    "Teach what you've learned to someone else",
+    "Use spaced repetition for long-term memory",
+    "Stay hydrated and take care of your health",
+    "Take breaks during long study sessions",
+    "Take a nap, Bayaw! It will help you focus.",
+    "Create a dedicated study space free from distractions",
+    "Set specific, achievable goals for each study session",
+    "Practice active recall instead of passive reading",
+    "Mag-jowa ng Bayaw rin at gawing bebetime ang study session!",
+    "Kape ka muna, Bayaw!",
+    "Bwumawi ka nalang ng tulog after Board Exam. Push mo na yan!",
+    "Tawa ka muna, Bayaw!",
+    "Tumawa ka ba? Nababaliw ka na siguro."
+];
+
+let currentTipIndex = 0;
+
+function nextStudyTip() {
+    currentTipIndex = (currentTipIndex + 1) % studyTips.length;
+    document.getElementById('study-tip').textContent = `"${studyTips[currentTipIndex]}"`;
+}
+
+// Study Streak - REAL DATA from backend (no random numbers)
+let actualStreakValue = {{ streak|default(0) }};
+
+function updateStudyStreak() {
+    const streakElement = document.getElementById('study-streak');
+    if (streakElement) {
+        const streak = actualStreakValue;
+        streakElement.textContent = `${streak} day${streak !== 1 ? 's' : ''}`;
+    }
+}
+
+// Also update the calendar's streak display when needed
+function refreshStudyStreak() {
+    // This can be called after a quiz is completed
+    fetch('/api/user-streak')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                actualStreakValue = data.streak;
+                updateStudyStreak();
+            }
+        })
+        .catch(error => console.error('Error fetching streak:', error));
+}
+
+// Initialize the new features
+updateStudyStreak();
+nextStudyTip(); // Show first tip
+
+// Add to your existing renderCalendar function
+function renderCalendar() {
+
+    
+    // Update the new features
+    updateStudyStreak();
+}
+
+// Calendar functionality
+let currentDate = new Date();
+let selectedDate = new Date();
+let reminders = [];
+let alarmInterval;
+let countdownInterval;
+
+function renderCalendar() {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    document.getElementById('current-month').textContent = 
+        `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const startingDay = (firstDay.getDay() + 6) % 7;
+    const monthLength = lastDay.getDate();
+    
+    const calendarGrid = document.getElementById('calendar-grid');
+    calendarGrid.innerHTML = '';
+    
+// Load reminders from server
+async function loadReminders() {
+    try {
+        const response = await fetch('/api/reminders', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            reminders = data.reminders;
+            renderCalendar();
+        }
+    } catch (error) {
+        console.error('Error loading reminders:', error);
+    }
+}
+
+    // Add empty cells for previous month
+    for (let i = 0; i < startingDay; i++) {
+        const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+        const prevMonthDay = prevMonth.getDate() - startingDay + i + 1;
+        
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'h-6 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-xs';
+        emptyDay.textContent = prevMonthDay;
+        calendarGrid.appendChild(emptyDay);
+    }
+    
+    // Add days of current month
+    for (let day = 1; day <= monthLength; day++) {
+        const dayElement = document.createElement('div');
+        const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const dayReminders = reminders.filter(r => r.date === dateStr);
+        const dateObj = new Date(dateStr);
+        
+        const today = new Date();
+        const isToday = dateObj.toDateString() === today.toDateString();
+        const isSelected = dateObj.toDateString() === selectedDate.toDateString();
+        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+        const hasReminders = dayReminders.length > 0;
+        
+        let baseClass = 'h-6 rounded flex items-center justify-center cursor-pointer text-xs font-medium transition-all duration-200 ';
+        
+        if (isToday && isSelected) {
+            baseClass += 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg transform scale-105 ';
+        } else if (isToday) {
+            baseClass += 'bg-gradient-to-br from-green-400 to-green-500 text-white shadow-md ';
+        } else if (isSelected) {
+            baseClass += 'bg-gradient-to-br from-blue-400 to-blue-500 text-white shadow-md ';
+        } else if (isWeekend && hasReminders) {
+            baseClass += 'bg-gradient-to-br from-orange-400 to-orange-500 text-white ';
+        } else if (isWeekend) {
+            baseClass += 'bg-orange-100 text-orange-700 ';
+        } else if (hasReminders) {
+            baseClass += 'bg-gradient-to-br from-purple-400 to-purple-500 text-white ';
+        } else {
+            baseClass += 'bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 ';
+        }
+        
+        dayElement.className = baseClass;
+        dayElement.textContent = day;
+        dayElement.onclick = () => selectDate(dateObj);
+        calendarGrid.appendChild(dayElement);
+    }
+    
+    updateSelectedDateInfo();
+    renderRemindersList();
+    startAlarmChecker();
+    updateNextSessionCountdown();
+}
+
+function selectDate(date) {
+    selectedDate = date;
+    renderCalendar();
+}
+
+function changeMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    renderCalendar();
+}
+
+function updateSelectedDateInfo() {
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    const today = new Date();
+    let displayText = '';
+    
+    if (selectedDate.toDateString() === today.toDateString()) {
+        displayText = 'Today';
+    } else if (selectedDate.toDateString() === new Date(today.getTime() + 86400000).toDateString()) {
+        displayText = 'Tomorrow';
+    } else {
+        displayText = dayNames[selectedDate.getDay()];
+    }
+    
+    document.getElementById('selected-date').textContent = 
+        `${displayText}, ${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}`;
+    
+    document.getElementById('selected-date-full').textContent = 
+        `${dayNames[selectedDate.getDay()]}, ${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`;
+    
+    // Update progress
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const dayReminders = reminders.filter(r => r.date === dateStr);
+    const completed = dayReminders.filter(r => r.completed).length;
+    const total = dayReminders.length;
+    
+    document.getElementById('daily-progress').textContent = `${completed}/${total}`;
+    document.getElementById('progress-bar').style.width = total > 0 ? `${(completed / total) * 100}%` : '0%';
+}
+
+function renderRemindersList() {
+    const remindersList = document.getElementById('reminders-list');
+    const sessionCount = document.getElementById('session-count');
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    
+    const dayReminders = reminders
+        .filter(r => r.date === dateStr)
+        .sort((a, b) => a.time.localeCompare(b.time));
+    
+    sessionCount.textContent = dayReminders.length;
+    
+    if (dayReminders.length === 0) {
+        remindersList.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-calendar-plus text-green-200 text-xl mb-2"></i>
+                <p class="text-green-500 text-xs">No study sessions today</p>
+                <p class="text-green-400 text-xs mt-1">Add your first session!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    remindersList.innerHTML = dayReminders.map(reminder => `
+        <div class="bg-white border-l-3 ${reminder.completed ? 'border-green-400' : 'border-blue-400'} rounded-r-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 ${reminder.completed ? 'opacity-75' : ''}">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex-1">
+                    <h5 class="font-semibold text-gray-800 text-sm mb-1 truncate">${reminder.title}</h5>
+                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                        <i class="fas fa-clock ${reminder.completed ? 'text-green-500' : 'text-blue-500'}"></i>
+                        <span>${formatTimeTo12Hour(reminder.time)}</span>
+                        <i class="fas fa-book text-purple-500"></i>
+                        <span>${reminder.topic || 'General'}</span>
+                    </div>
+                </div>
+                <div class="flex gap-1 ml-2">
+                    ${!reminder.completed ? `
+                        <button onclick="completeReminder(${reminder.id})" class="text-green-500 hover:text-green-700 text-xs" title="Mark Complete">
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                    ` : ''}
+                    <button onclick="deleteReminder(${reminder.id})" class="text-red-400 hover:text-red-600 text-xs" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${!reminder.completed && isSessionTimeNear(reminder) ? `
+                <div class="flex items-center gap-1 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 text-xs">
+                    <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                    <span class="text-yellow-700">Starting soon!</span>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function formatTimeTo12Hour(time24) {
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+}
+
+function isSessionTimeNear(reminder) {
+    const now = new Date();
+    const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
+    const timeDiff = reminderTime - now;
+    return timeDiff > 0 && timeDiff <= 15 * 60 * 1000; // 15 minutes
+}
+
+// Function to check for due reminders
+let alarmCheckInterval = null;
+
+function startAlarmChecker() {
+    if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+    
+    alarmCheckInterval = setInterval(() => {
+        const now = new Date();
+        const currentTime = now.toTimeString().substring(0, 5);
+        const today = now.toISOString().split('T')[0];
+        
+        // reminders is already loaded globally from the database
+// The variable 'reminders' is updated by loadReminders()
+        
+        const dueReminder = reminders.find(r => 
+            r.date === today && 
+            r.time === currentTime && 
+            !r.completed && 
+            !r.snoozed
+        );
+        
+        if (dueReminder && !window.currentActiveAlarm && !window.currentActiveAlarmReminder) {
+            window.currentActiveAlarm = dueReminder;
+            window.currentActiveAlarmReminder = dueReminder;
+            showAlarm(dueReminder);
+        }
+        
+        updateNextSessionCountdown();
+    }, 1000);
+}
+
+// Show the alarm notification
+function showAlarm(reminder) {
+    const alarmDiv = document.getElementById('alarm-notification');
+    const messageSpan = document.getElementById('alarm-message');
+    const titleSpan = document.getElementById('alarm-session-title');
+    
+    if (alarmDiv && messageSpan && titleSpan && reminder) {
+        window.currentActiveAlarm = reminder;
+        messageSpan.textContent = `Time for your ${reminder.topic || 'study'} session!`;
+        titleSpan.textContent = reminder.title;
+        alarmDiv.classList.remove('hidden');
+        
+        if (Notification.permission === 'granted') {
+            new Notification('Study Session Alert! 🎯', {
+                body: `Time for: ${reminder.title}`,
+                icon: '/static/img/logo.png'
+            });
+        }
+    }
+}
+
+// Dismiss the alarm (X button)
+function dismissAlarm() {
+    const alarmDiv = document.getElementById('alarm-notification');
+    if (alarmDiv) {
+        alarmDiv.classList.add('hidden');
+    }
+    window.currentActiveAlarm = null;
+}
+
+async function snoozeAlarm() {
+    if (window.currentActiveAlarm) {
+        try {
+            const response = await fetch(`/api/reminders/${window.currentActiveAlarm.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ snoozed: true })
+            });
+            
+            if (response.ok) {
+                await loadReminders();
+                dismissAlarm();
+                showToastMessage('Reminder snoozed for 5 minutes', 'info');
+            }
+        } catch (error) {
+            console.error('Error snoozing reminder:', error);
+        }
+    }
+    dismissAlarm();
+}
+
+function startQuickSession(minutes) {
+    const existingModal = document.getElementById('session-choice-modal');
+    if (existingModal) existingModal.remove();
+    
+    stopQuickSession();
+    quickSessionTime = minutes * 60;
+    updateQuickSessionDisplay();
+    
+    document.getElementById('stop-session-btn').classList.remove('hidden');
+    
+    quickSessionInterval = setInterval(() => {
+        quickSessionTime--;
+        updateQuickSessionDisplay();
+        
+        if (quickSessionTime <= 0) {
+            stopQuickSession();
+            // Show choice modal when quick session completes
+            showSessionChoiceModal({ title: 'Quick Study Session Completed!' });
+        }
+    }, 1000);
+}
+
+// Toast helper function
+function showToastMessage(message, type = 'success') {
+    // Remove existing toast
+    const existingToast = document.querySelector('.custom-toast-reminder');
+    if (existingToast) existingToast.remove();
+    
+    // Create toast
+    const toast = document.createElement('div');
+    toast.className = `custom-toast-reminder fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm ${
+        type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    } animate-fade-in-up`;
+    toast.innerHTML = `<div class="flex items-center gap-2"><i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i><span>${message}</span></div>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Add this CSS for toast animation if not already present
+const toastStyle = document.createElement('style');
+if (!document.querySelector('#toast-animation-style')) {
+    toastStyle.id = 'toast-animation-style';
+    toastStyle.textContent = `
+        @keyframes fade-in-up-reminder {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fade-in-up-reminder 0.3s ease-out; }
+    `;
+    document.head.appendChild(toastStyle);
+}
+
+function updateNextSessionCountdown() {
+    const nextSessionAlert = document.getElementById('next-session-alert');
+    const countdownTimer = document.getElementById('countdown-timer');
+    const nextSessionTitle = document.getElementById('next-session-title');
+    
+    if (!nextSessionAlert) return;
+    
+    const now = new Date();
+    const reminders = JSON.parse(localStorage.getItem('study_reminders') || '[]');
+    const upcomingReminders = reminders
+        .filter(r => !r.completed && !r.snoozed)
+        .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+    
+    if (upcomingReminders.length === 0) {
+        nextSessionAlert.classList.add('hidden');
+        return;
+    }
+    
+    const nextReminder = upcomingReminders[0];
+    const nextSessionTime = new Date(`${nextReminder.date}T${nextReminder.time}`);
+    const diff = nextSessionTime - now;
+    
+    if (diff <= 0) {
+        nextSessionAlert.classList.add('hidden');
+        return;
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (countdownTimer) countdownTimer.textContent = 
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    if (nextSessionTitle) nextSessionTitle.textContent = nextReminder.title;
+    nextSessionAlert.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    startAlarmChecker();
+    loadReminders();  // Add this line
+    
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+});
+async function completeReminder(id) {
+    try {
+        const response = await fetch(`/api/reminders/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ completed: true })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await loadReminders();
+            showToastMessage('Session completed! Great job!', 'success');
+        }
+    } catch (error) {
+        console.error('Error completing reminder:', error);
+    }
+}
+
+async function deleteReminder(id) {
+    if (!confirm('Delete this study session?')) return;
+    
+    try {
+        const response = await fetch(`/api/reminders/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await loadReminders();
+            showToastMessage('Session deleted', 'success');
+        }
+    } catch (error) {
+        console.error('Error deleting reminder:', error);
+    }
+}
+
+function snoozeAllReminders() {
+    reminders.forEach(r => {
+        if (!r.completed) r.snoozed = true;
+    });
+    localStorage.setItem('study_reminders', JSON.stringify(reminders));
+    alert('All reminders snoozed for 1 hour!');
+}
+
+function markAllCompleted() {
+    const today = new Date().toISOString().split('T')[0];
+    reminders.forEach(r => {
+        if (r.date === today) r.completed = true;
+    });
+    localStorage.setItem('study_reminders', JSON.stringify(reminders));
+    renderCalendar();
+}
+
+function openCalendarModal() {
+    document.getElementById('reminder-date').value = selectedDate.toISOString().split('T')[0];
+    document.getElementById('calendar-modal').classList.remove('hidden');
+}
+
+function closeCalendarModal() {
+    document.getElementById('calendar-modal').classList.add('hidden');
+    document.getElementById('reminder-form').reset();
+}
+
+// Request notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+}
+
+// Handle form submission - Save to database
+document.getElementById('reminder-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const reminder = {
+        date: document.getElementById('reminder-date').value,
+        time: document.getElementById('reminder-time').value,
+        title: document.getElementById('reminder-title').value,
+        topic: document.getElementById('reminder-topic').value,
+        completed: false,
+        snoozed: false
+    };
+    
+    try {
+        const response = await fetch('/api/reminders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(reminder)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await loadReminders();
+            closeCalendarModal();
+            showToastMessage('Study session scheduled!', 'success');
+        } else {
+            showToastMessage(data.error || 'Failed to save reminder', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving reminder:', error);
+        showToastMessage('Error saving reminder', 'error');
+    }
+});
+
+// Initialize calendar
+renderCalendar();
+
+// ========== STICKY NOTES FUNCTIONALITY - FULLY FIXED ==========
+let notes = [];
+let currentNoteColor = 'bg-yellow-100';
+let currentNoteBorderColor = 'border-yellow-300';
+
+// Get CSRF token from meta tag
+function getCSRFToken() {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    return token ? token.getAttribute('content') : '';
+}
+
+// Load notes from server
+async function loadNotes() {
+    try {
+        const response = await fetch('/api/notes', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            },
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to load notes: HTTP', response.status);
+            renderStickyNotes();
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            notes = data.notes || [];
+            renderStickyNotes();
+        } else {
+            renderStickyNotes();
+        }
+    } catch (error) {
+        console.error('Error loading notes:', error);
+        renderStickyNotes();
+    }
+}
+
+function renderStickyNotes() {
+    const container = document.getElementById('sticky-notes-container');
+    const notesCountDiv = document.getElementById('notes-count');
+    
+    if (!container) return;
+    
+    if (notesCountDiv) notesCountDiv.innerHTML = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+    
+    if (notes.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 col-span-1 md:col-span-2 lg:col-span-3">
+            <i class="fas fa-sticky-note text-gray-300 text-4xl mb-3"></i>
+            <p class="text-gray-500 text-lg mb-2">No notes yet</p>
+            <p class="text-gray-400 text-sm">Click "Add Note" to create your first quick note!</p>
+        </div>`;
+        return;
+    }
+    
+    container.innerHTML = notes.map(note => `<div class="${note.color || 'bg-yellow-100'} ${note.borderColor || 'border-yellow-300'} rounded-lg p-4 shadow-sm hover:shadow transition-all duration-200 relative group min-h-[140px] flex flex-col">
+        <button onclick="deleteNote(${note.id})" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 text-sm z-10"><i class="fas fa-times"></i></button>
+        <h3 class="font-semibold text-gray-800 text-sm mb-2 truncate pr-6">${escapeHtml(note.title)}</h3>
+        <p class="text-gray-600 text-sm whitespace-pre-wrap break-words leading-relaxed flex-1">${escapeHtml((note.content || '').substring(0, 150))}${(note.content || '').length > 150 ? '...' : ''}</p>
+        <div class="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-200">${formatNoteDate(note.createdAt)}</div>
+    </div>`).join('');
+}
+
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+function formatNoteDate(dateString) { if (!dateString) return ''; const date = new Date(dateString); return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+function setNoteColor(bgColor, borderColor) { currentNoteColor = bgColor; currentNoteBorderColor = borderColor; }
+function selectNoteColor(color) { 
+    const colorMap = { 'yellow': { bg: 'bg-yellow-100', border: 'border-yellow-300' }, 'blue': { bg: 'bg-blue-100', border: 'border-blue-300' }, 'green': { bg: 'bg-green-100', border: 'border-green-300' }, 'pink': { bg: 'bg-pink-100', border: 'border-pink-300' }, 'purple': { bg: 'bg-purple-100', border: 'border-purple-300' } };
+    currentNoteColor = colorMap[color].bg; currentNoteBorderColor = colorMap[color].border;
+    document.querySelectorAll('.note-color-option').forEach(btn => btn.classList.remove('ring-1', 'ring-green-500'));
+    if (event && event.target) event.target.classList.add('ring-1', 'ring-green-500');
+}
+
+function addNewNote() { 
+    const modal = document.getElementById('note-modal'); if (modal) modal.classList.remove('hidden'); 
+    const form = document.getElementById('note-form'); if (form) form.reset();
+    currentNoteColor = 'bg-yellow-100'; currentNoteBorderColor = 'border-yellow-300';
+    document.querySelectorAll('.note-color-option').forEach(btn => btn.classList.remove('ring-1', 'ring-green-500'));
+    const firstColorBtn = document.querySelector('.note-color-option'); if (firstColorBtn) firstColorBtn.classList.add('ring-1', 'ring-green-500');
+}
+function closeNoteModal() { const modal = document.getElementById('note-modal'); if (modal) modal.classList.add('hidden'); }
+
+async function deleteNote(id) {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    try {
+        const response = await fetch(`/api/notes/${id}`, { 
+            method: 'DELETE', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }, 
+            credentials: 'include' 
+        });
+        const data = await response.json();
+        if (data.success) await loadNotes();
+        else alert(data.message || 'Failed to delete note');
+    } catch (error) { alert('Error deleting note'); }
+}
+
+const noteFormElement = document.getElementById('note-form');
+if (noteFormElement) {
+    noteFormElement.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const title = document.getElementById('note-title').value.trim();
+        const content = document.getElementById('note-content').value.trim();
+        if (!title) { alert('Please enter a note title'); return; }
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.textContent : 'Save Note';
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+        
+        try {
+            const response = await fetch('/api/notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    title: title, 
+                    content: content, 
+                    color: currentNoteColor, 
+                    borderColor: currentNoteBorderColor 
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                closeNoteModal();
+                await loadNotes();
+                if (submitBtn) { submitBtn.textContent = 'Saved!'; }
+                setTimeout(() => { if (submitBtn) submitBtn.textContent = originalText; }, 1500);
+            } else {
+                alert(data.message || 'Failed to save note');
+                if (submitBtn) submitBtn.textContent = originalText;
+            }
+        } catch (error) {
+            alert('Error saving note');
+            if (submitBtn) submitBtn.textContent = originalText;
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
+}
+
+// Initialize notes on page load
+setTimeout(function() { loadNotes(); }, 500);
+</script>
+
+<style>
+    .overflow-y-auto {
+        scrollbar-width: thin;
+        scrollbar-color: #9CA3AF #E5E7EB;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar-track {
+        background: #E5E7EB;
+        border-radius: 3px;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #9CA3AF;
+        border-radius: 3px;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: #6B7280;
+    }
+
+    /* Custom chart animations */
+    .chart-fade-in {
+        animation: fadeInScale 0.8s ease-out;
+    }
+    
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+</style>
+
+<style>
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #9CA3AF #E5E7EB;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #E5E7EB;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #9CA3AF;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6B7280;
+}
+</style>
+
+<!-- Chart.js and initialization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Wait for DOM to fully load
+document.addEventListener('DOMContentLoaded', function() {
+    // DESTROY EXISTING CHART INSTANCE FIRST
+    if (window.performanceChartInstance) {
+        window.performanceChartInstance.destroy();
+        window.performanceChartInstance = null;
+    }
+    
+    console.log('=== DASHBOARD CHART INITIALIZATION ===');
+    
+    // Get data from Flask
+    let chartLabels = [];
+    let chartData = [];
+    
+    try {
+        chartLabels = JSON.parse('{{ daily_labels | safe }}');
+        chartData = JSON.parse('{{ daily_averages | safe }}');
+        
+        console.log('Chart Labels:', chartLabels);
+        console.log('Chart Data:', chartData);
+        
+    } catch(e) {
+        console.error('Error parsing chart data:', e);
+        chartLabels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
+        chartData = [0, 0, 0, 0, 0, 0, 0];
+    }
+    
+    // Get canvas element
+    const canvas = document.getElementById('performanceChart');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+    
+    // Destroy existing chart instance if it exists
+    if (window.performanceChartInstance) {
+        window.performanceChartInstance.destroy();
+        console.log('Destroyed existing chart instance');
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const chartStatus = document.getElementById('chartStatus');
+    
+    // Update status message
+    if (chartStatus) {
+        if (chartData.every(v => v === 0)) {
+            chartStatus.innerHTML = '<i class="fas fa-chart-line mr-1"></i> Take a quiz to see your performance chart!';
+        } else {
+            chartStatus.innerHTML = '<i class="fas fa-chart-line mr-1"></i> Your 7-day performance journey';
+        }
+    }
+    
+    // Create the chart
+    window.performanceChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Your Performance Score',
+                data: chartData,
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#10B981',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Score (%)',
+                        font: { size: 12 }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        },
+                        stepSize: 20
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        font: { size: 12 }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 10
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.raw}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('Chart created successfully');
+});
+</script>
+
+<script>
+// Load dashboard achievements
+async function loadDashboardAchievements() {
+    try {
+        const response = await fetch('/achievements/api/stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            const container = document.getElementById('dashboard-achievements');
+            
+            if (data.recent_unlocks && data.recent_unlocks.length > 0) {
+                container.innerHTML = `
+                    <div class="mb-3 p-2 bg-green-50 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-chart-line text-green-500"></i> Your Stats
+                        </p>
+                        <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="bg-white rounded p-2">
+                                <p class="text-lg font-bold text-green-600">${data.unlocked_count}</p>
+                                <p class="text-xs text-gray-500">Achievements</p>
+                            </div>
+                            <div class="bg-white rounded p-2">
+                                <p class="text-lg font-bold text-yellow-600">${data.total_points}</p>
+                                <p class="text-xs text-gray-500">Total Points</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-700 mb-2">Recent Unlocks</p>
+                    ${data.recent_unlocks.map(achievement => `
+                        <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center ${achievement.badge_color === 'yellow' ? 'bg-yellow-500' : achievement.badge_color === 'green' ? 'bg-green-500' : achievement.badge_color === 'blue' ? 'bg-blue-500' : 'bg-purple-500'}">
+                                <i class="${achievement.icon} text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-800">${achievement.name}</p>
+                                <p class="text-xs text-gray-500">Unlocked ${achievement.unlocked_at}</p>
+                            </div>
+                            <i class="fas fa-check-circle text-green-500"></i>
+                        </div>
+                    `).join('')}
+                    <div class="mt-3 pt-2 text-center">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 rounded-full h-2 transition-all" style="width: ${data.completion_percentage}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">${data.completion_percentage}% Complete</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-6">
+                        <i class="fas fa-trophy text-gray-300 text-3xl mb-2"></i>
+                        <p class="text-gray-500 text-sm">No achievements yet</p>
+                        <p class="text-gray-400 text-xs mt-1">Complete quizzes to earn badges!</p>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading dashboard achievements:', error);
+    }
+}
+
+// ========== REMINDER FUNCTIONS ==========
+
+// Load reminders from server
+async function loadReminders() {
+    try {
+        const response = await fetch('/api/reminders', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to load reminders:', response.status);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            reminders = data.reminders;
+            renderCalendar();
+        }
+    } catch (error) {
+        console.error('Error loading reminders:', error);
+    }
+}
+
+// Show toast message
+function showToastMessage(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm ${
+        type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    toast.innerHTML = `<div class="flex items-center gap-2"><i class="fas ${
+        type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'
+    }"></i><span>${message}</span></div>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', loadDashboardAchievements);
+</script>
+{% endblock %}

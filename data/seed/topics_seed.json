@@ -1,0 +1,22 @@
+[
+    {
+        "name": "AREA I",
+        "description": "Farm Machinery and Equipment - Study of agricultural machinery and equipment used in farming operations"
+    },
+    {
+        "name": "AREA II", 
+        "description": "Soil and Water Conservation Engineering - Principles and practices of soil conservation and water management in agriculture"
+    },
+    {
+        "name": "AREA III",
+        "description": "Post-Harvest and Processing Engineering - Technologies and methods for handling, processing, and preserving agricultural products after harvest"
+    },
+    {
+        "name": "Engineering Mathematics",
+        "description": "Mathematical Principles for Engineering Applications - Application of engineering principles to environmental protection and resource management"
+    },
+    {
+        "name": "PAES Standards", 
+        "description": "Philippine Agricultural Engineering Standards and specifications - Official standards for agricultural machinery, structures, and practices"
+    }
+]

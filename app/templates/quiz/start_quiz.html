@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <!-- Page Header -->
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Quiz Setup Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-sliders-h text-green-600"></i>
+                        Quiz Settings
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Customize your quiz experience</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('quiz.start_quiz') }}" class="p-6 space-y-6">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <!-- Topic Selection - Card Grid -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-book-open text-green-600"></i>
+                            Select Topic
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {% for topic in topics %}
+                            <label class="topic-card relative cursor-pointer">
+                                <input type="radio" name="topic_id" value="{{ topic.id }}" class="absolute opacity-0 peer" required>
+                                <div class="border-2 border-gray-200 rounded-xl p-4 peer-checked:border-green-500 peer-checked:bg-green-50 transition-all duration-200 hover:shadow-md cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                            <i class="fas fa-folder-open text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">{{ topic.name }}</h3>
+
+                                        </div>
+                                        <div class="ml-auto">
+                                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 peer-checked:border-green-500 peer-checked:bg-green-500 flex items-center justify-center transition-all duration-200">
+                                                <i class="fas fa-check text-white text-xs opacity-0 peer-checked:opacity-100 transition-opacity duration-200"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Number of Questions - UPDATED to 25, 50, 75, 100 -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-list-ol text-green-600"></i>
+                            Number of Questions
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {% for num in [25, 50, 75, 100] %}
+                            <label class="cursor-pointer">
+                                <input type="radio" name="num_questions" value="{{ num }}" class="hidden peer" {% if num == 25 %}checked{% endif %}>
+                                <div class="text-center py-3 px-4 border-2 border-gray-200 rounded-xl peer-checked:border-green-500 peer-checked:bg-green-500 peer-checked:text-white transition-all duration-200 hover:shadow-md cursor-pointer">
+                                    <span class="font-semibold text-gray-700 peer-checked:text-white">{{ num }}</span>
+                                    <span class="text-xs text-gray-400 peer-checked:text-green-100 block">questions</span>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Quiz Mode Options -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-gamepad text-green-600"></i>
+                            Quiz Mode
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Timed Mode -->
+                            <label class="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-gray-300 transition-all duration-200">
+                                <input type="checkbox" name="is_timed" value="true" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500 focus:ring-2">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-stopwatch text-green-600"></i>
+                                        <span class="font-medium text-gray-800">Timed Mode</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">60 seconds per question</p>
+                                </div>
+                            </label>
+
+                            <!-- Show Explanations -->
+                        <label class="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-gray-300 transition-all duration-200">
+                            <input type="checkbox" name="show_explanations" value="true" checked class="w-5 h-5 text-gray-600 rounded border-gray-300 focus:ring-gray-400 focus:ring-2">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-lightbulb text-gray-600"></i>
+                                    <span class="font-medium text-gray-800">Show Explanations</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Review answers after quiz</p>
+                            </div>
+                        </label>
+                        </div>
+                    </div>
+
+                    <!-- Start Button -->
+                    <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg shadow-green-200">
+                        <i class="fas fa-play"></i>
+                        Start Quiz
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Actions Sidebar -->
+        <div class="space-y-6">
+            <!-- Random Quiz Card - UPDATED to 25, 50, 75, 100 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-random text-green-600"></i>
+                        Random Quiz
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">Mix of all topics</p>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-2 gap-3">
+                        {% for count in [25, 50, 75, 100] %}
+                        <form method="POST" action="{{ url_for('quiz.start_quiz') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="is_random" value="true">
+                            <input type="hidden" name="num_questions" value="{{ count }}">
+                            <input type="hidden" name="show_explanations" value="true">
+                            <button type="submit" class="w-full bg-green-50 hover:bg-green-100 text-green-700 font-medium py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 border border-green-200 hover:border-green-400">
+                                <i class="fas fa-dice-d6 text-sm"></i>
+                                {{ count }} Questions
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timed Random Quiz Card - UPDATED to 25, 50, 75, 100 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-hourglass-half text-green-600"></i>
+                        Timed Challenge
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">Test your speed</p>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-2 gap-3">
+                        {% for count in [25, 50, 75, 100] %}
+                        <form method="POST" action="{{ url_for('quiz.start_quiz') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="is_random" value="true">
+                            <input type="hidden" name="is_timed" value="true">
+                            <input type="hidden" name="num_questions" value="{{ count }}">
+                            <input type="hidden" name="show_explanations" value="true">
+                            <button type="submit" class="w-full bg-green-50 hover:bg-green-100 text-green-700 font-medium py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 border border-green-200 hover:border-green-400">
+                                <i class="fas fa-stopwatch text-sm"></i>
+                                {{ count }} Questions
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-100">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fas fa-info-circle text-green-600 text-xl"></i>
+                    <h3 class="font-semibold text-gray-800">Did You Know?</h3>
+                </div>
+                <p class="text-sm text-gray-600">Regular quizzing helps improve long-term memory retention by up to 50%! Keep practicing to master your topics.</p>
+                <div class="mt-4 flex items-center gap-2 text-xs text-green-600">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Track your progress in Analytics</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Topic Card Selection Effect */
+    .topic-card input:checked + div {
+        border-color: #22c55e;
+        background-color: #f0fdf4;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+    }
+    
+    .topic-card input:checked + div .fa-check {
+        opacity: 1 !important;
+    }
+    
+    /* Number of Questions Selection Effect */
+    input[name="num_questions"]:checked + div {
+        background-color: #22c55e !important;
+        border-color: #22c55e !important;
+        transform: scale(1.02);
+    }
+    
+    input[name="num_questions"]:checked + div span {
+        color: white !important;
+    }
+    
+    input[name="num_questions"]:checked + div .text-gray-400 {
+        color: #bbf7d0 !important;
+    }
+    
+    /* Quiz Mode Checkbox Styles */
+    input[name="is_timed"]:checked + div,
+    input[name="show_explanations"]:checked + div {
+        border-color: #22c55e;
+        background-color: #f0fdf4;
+    }
+    
+    /* Hover Effects */
+    .topic-card:hover .peer:not(:checked) + div {
+        border-color: #86efac;
+        background-color: #f7fee7;
+    }
+    
+    /* Smooth transitions */
+    .topic-card div,
+    .peer + div,
+    button {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Radio button animation */
+    .peer:checked + div .fa-check {
+        animation: checkPop 0.2s ease-in-out;
+    }
+    
+    @keyframes checkPop {
+        0% {
+            transform: scale(0);
+        }
+        80% {
+            transform: scale(1.2);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    
+    /* Number button animation */
+    input[name="num_questions"]:checked + div {
+        animation: buttonPop 0.2s ease-in-out;
+    }
+    
+    @keyframes buttonPop {
+        0% {
+            transform: scale(0.95);
+        }
+        100% {
+            transform: scale(1.02);
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">{{ title }}</h1>
+    
+    <!-- Add PAES Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Add New PAES Standard</h2>
+        <form method="POST" action="{{ url_for('admin.add_paes') }}">
+            {{ form.hidden_tag() }}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    {{ form.code.label(class="block text-gray-700 mb-2") }}
+                    {{ form.code(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500") }}
+                </div>
+                <div class="md:col-span-2">
+                    {{ form.title.label(class="block text-gray-700 mb-2") }}
+                    {{ form.title(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500") }}
+                </div>
+                <div class="md:col-span-3">
+                    {{ form.description.label(class="block text-gray-700 mb-2") }}
+                    {{ form.description(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500", rows=3) }}
+                </div>
+            </div>
+            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors">
+                Add PAES Standard
+            </button>
+        </form>
+    </div>
+
+    <!-- PAES Standards List -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Existing PAES Standards</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="px-4 py-2 text-left">Code</th>
+                        <th class="px-4 py-2 text-left">Title</th>
+                        <th class="px-4 py-2 text-left">Description</th>
+                        <th class="px-4 py-2 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paes in paes_standards %}
+                    <tr class="border-b border-gray-200">
+                        <td class="px-4 py-3 font-mono">{{ paes.code }}</td>
+                        <td class="px-4 py-3 font-semibold">{{ paes.title }}</td>
+                        <td class="px-4 py-3">{{ paes.description }}</td>
+                        <td class="px-4 py-3">
+                            <a href="{{ url_for('admin.delete_paes', paes_id=paes.id) }}" 
+                               class="text-red-600 hover:text-red-800 ml-2"
+                               onclick="return confirm('Are you sure you want to delete this PAES standard?')">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

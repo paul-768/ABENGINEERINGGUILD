@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl px-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-150">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Quiz Review</h1>
+            <a href="{{ url_for('quiz.quiz_home') }}" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-150">
+                Take Another Quiz
+            </a>
+        </div>
+
+        {% for question in questions %}
+        {% set user_answer = user_answers.get(question.id|string) %}
+        {% set is_correct = user_answer == question.correct_answer %}
+        
+        <!-- Simple card - no colored backgrounds, just border accent -->
+        <div class="mb-6 p-4 rounded-lg border-l-4 transition-all duration-150 
+            {% if is_correct %}
+                border-green-500 dark:border-green-600 bg-white dark:bg-gray-800
+            {% else %}
+                border-red-500 dark:border-red-600 bg-white dark:bg-gray-800
+            {% endif %}
+            shadow-sm hover:shadow-md">
+            
+            <!-- Question Header -->
+            <div class="flex items-start mb-4">
+                <span class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full w-7 h-7 flex items-center justify-center mr-3 font-semibold text-sm">{{ loop.index }}</span>
+                <h3 class="text-base font-medium text-gray-800 dark:text-gray-200 leading-relaxed">{{ question.question_text }}</h3>
+            </div>
+            
+            <!-- Answer Options - Simple, no heavy colors -->
+            <div class="space-y-2 ml-10">
+                {% for option in ['A', 'B', 'C', 'D'] %}
+                {% set option_text = question['option_' + option.lower()] %}
+                {% set is_correct_option = option == question.correct_answer %}
+                {% set is_user_wrong_option = user_answer == option and not is_correct_option %}
+                
+                <!-- Subtle option styling -->
+                <div class="flex items-center p-2 rounded-lg 
+                    {% if is_correct_option %}
+                        bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600
+                    {% elif is_user_wrong_option %}
+                        bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600
+                    {% else %}
+                        bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700
+                    {% endif %}">
+                    
+                    <!-- Option Letter -->
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center mr-3 text-xs font-semibold
+                        {% if is_correct_option %}
+                            bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400
+                        {% elif is_user_wrong_option %}
+                            bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400
+                        {% else %}
+                            bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300
+                        {% endif %}">
+                        {{ option }}
+                    </div>
+                    
+                    <!-- Option Text -->
+                    <span class="flex-1 text-gray-700 dark:text-gray-300 text-sm">{{ option_text }}</span>
+                    
+                    <!-- Status Icon - Small and subtle -->
+                    {% if is_correct_option %}
+                    <i class="fas fa-check-circle text-green-500 dark:text-green-500 text-xs ml-2"></i>
+                    {% elif is_user_wrong_option %}
+                    <i class="fas fa-times-circle text-red-500 dark:text-red-500 text-xs ml-2"></i>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Explanation - Clean and simple -->
+            {% if question.explanation %}
+            <div class="mt-4 ml-10 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                    <span class="font-semibold text-gray-700 dark:text-gray-300">📘 Explanation:</span>
+                    {{ question.explanation }}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <!-- Back Button -->
+        <div class="mt-6 text-center">
+            <a href="{{ url_for('main.dashboard') }}" 
+               class="bg-gray-400 hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-150 inline-flex items-center gap-2">
+                <i class="fas fa-arrow-left text-sm"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

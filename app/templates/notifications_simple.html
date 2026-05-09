@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Notifications</h1>
+                <p class="text-sm text-gray-500 mt-1">Stay updated with your activity</p>
+            </div>
+            {% if notifications %}
+            <button onclick="markAllRead()" 
+                    id="markAllBtn"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center gap-2">
+                <i class="fas fa-check-double"></i>
+                Mark All as Read
+            </button>
+            {% endif %}
+        </div>
+
+        {% if notifications %}
+            <div class="space-y-3" id="notifications-list">
+                {% for notification in notifications %}
+                <div id="notification-{{ notification.id }}" 
+                     class="rounded-lg shadow-sm p-4 transition-all duration-200 {% if not notification.is_read %}bg-green-50 border-l-4 border-green-500{% else %}bg-white border border-gray-200{% endif %}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <i class="{{ notification.icon or 'fas fa-bell' }} {% if not notification.is_read %}text-green-600{% else %}text-gray-400{% endif %}"></i>
+                                <h3 class="font-semibold text-gray-800">{{ notification.title }}</h3>
+                                <span class="text-xs text-gray-500">{{ notification.get_time_ago() }}</span>
+                            </div>
+                            <p class="text-gray-600 text-sm">{{ notification.message }}</p>
+                            {% if notification.action_url and notification.action_url != 'None' %}
+                            <a href="{{ notification.action_url }}" class="text-green-600 text-xs hover:underline mt-2 inline-block">
+                                View details →
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% if not notification.is_read %}
+                        <button onclick="markRead({{ notification.id }})" 
+                                class="text-green-600 hover:text-green-800 text-sm ml-3 whitespace-nowrap">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Mark read
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-bell-slash text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No notifications yet</h3>
+                <p class="text-gray-500">When you have notifications, they'll appear here.</p>
+                <a href="{{ url_for('quiz.quiz_home') }}" class="inline-block mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                    Take a Quiz
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+async function markRead(notificationId) {
+    try {
+        const response = await fetch(`/api/notifications/mark-read/${notificationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            const notificationEl = document.getElementById(`notification-${notificationId}`);
+            if (notificationEl) {
+                notificationEl.classList.remove('bg-green-50', 'border-l-4', 'border-green-500');
+                notificationEl.classList.add('bg-white', 'border', 'border-gray-200');
+                
+                const icon = notificationEl.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-green-600');
+                    icon.classList.add('text-gray-400');
+                }
+                
+                const button = notificationEl.querySelector('button');
+                if (button) button.remove();
+            }
+            
+            // Update unread count in header
+            updateHeaderBadge();
+            
+            showToast('Notification marked as read', 'success');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to mark as read', 'error');
+    }
+}
+
+async function markAllRead() {
+    const btn = document.getElementById('markAllBtn');
+    if (!btn) return;
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Update all notifications in the DOM
+            const notifications = document.querySelectorAll('[id^="notification-"]');
+            notifications.forEach(el => {
+                el.classList.remove('bg-green-50', 'border-l-4', 'border-green-500');
+                el.classList.add('bg-white', 'border', 'border-gray-200');
+                
+                const icon = el.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-green-600');
+                    icon.classList.add('text-gray-400');
+                }
+                
+                const button = el.querySelector('button');
+                if (button) button.remove();
+            });
+            
+            // Update badge
+            updateHeaderBadge();
+            
+            showToast(data.message || 'All notifications marked as read!', 'success');
+        } else {
+            showToast(data.error || 'Failed to mark all as read', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to mark all as read', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function updateHeaderBadge() {
+    try {
+        const response = await fetch('/api/notifications?limit=1');
+        const data = await response.json();
+        
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            const unreadCount = data.unread_count || 0;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating badge:', error);
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } transform transition-all duration-300 translate-x-full`;
+    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Update badge on page load
+document.addEventListener('DOMContentLoaded', updateHeaderBadge);
+</script>
+{% endblock %}

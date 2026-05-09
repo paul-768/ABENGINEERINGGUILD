@@ -1,0 +1,839 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header with Gradient -->
+    <div class="mb-8">
+        <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="bg-white/20 rounded-xl p-2">
+                            <i class="fas fa-question-circle text-2xl"></i>
+                        </div>
+                        <h1 class="text-3xl font-bold">Question Bank</h1>
+                    </div>
+                    <p class="text-purple-100 mt-1">Click on any topic to manage its questions</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold">{{ total_questions }}</div>
+                    <div class="text-xs text-purple-200">Total Questions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Total Questions</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ total_questions }}</p>
+                </div>
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-database text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Topics</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ topics|length }}</p>
+                </div>
+                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-folder text-green-600"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Avg per Topic</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ "%.1f"|format(total_questions / topics|length if topics|length > 0 else 0) }}</p>
+                </div>
+                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-chart-line text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-xs font-medium">Target Progress</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ "%.0f"|format((total_questions / (topics|length * 20) * 100) if topics|length > 0 else 0) }}%</p>
+                </div>
+                <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-check-circle text-yellow-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-6">
+        <div class="relative">
+            <input type="text" id="searchQuestionInput" 
+                   placeholder="🔍 Search questions by text, options, or explanation..." 
+                   class="w-full px-5 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition shadow-sm bg-white">
+            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+            <button onclick="clearSearch()" id="clearSearchBtn" 
+                    class="absolute right-3 top-2 text-gray-400 hover:text-gray-600 hidden transition">
+                <i class="fas fa-times-circle"></i>
+            </button>
+        </div>
+        <div id="searchResultInfo" class="text-sm text-gray-500 mt-2 hidden">
+            <span id="searchResultCount"></span> questions found
+        </div>
+    </div>
+
+    <!-- Topic Cards Grid -->
+    <div id="topicCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for topic in topics %}
+        <div onclick="openTopicQuestions({{ topic.id }}, '{{ topic.name|replace("'", "\\'") }}', '{{ topic.icon }}', '{{ topic.color }}')" 
+             class="topic-card bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
+            <div class="p-5">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-14 h-14 rounded-xl flex items-center justify-center" style="background-color: {{ topic.color }}20">
+                        <i class="{{ topic.icon }} text-2xl" style="color: {{ topic.color }}"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-bold text-gray-800">{{ topic.questions|length }}</span>
+                        <p class="text-xs text-gray-400">questions</p>
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition mb-2">
+                    {{ topic.name }}
+                </h3>
+                
+                <p class="text-sm text-gray-500 line-clamp-2 mb-4">
+                    {% if topic.name == "AREA I" %}
+                    Agricultural and Biosystems Engineering - Power, Mechanization, and Management
+                    {% elif topic.name == "AREA III" %}
+                    Post-Harvest, Food Engineering, and Agricultural Structures
+                    {% elif topic.name == "PAES Standards" %}
+                    Philippine Agricultural Engineering Standards and Specifications
+                    {% else %}
+                    {{ topic.description or 'No description available' }}
+                    {% endif %}
+                </p>
+                
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full text-center py-16 bg-white rounded-xl shadow-md">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-folder-open text-gray-400 text-4xl"></i>
+            </div>
+            <p class="text-gray-500 font-medium">No topics created yet</p>
+            <p class="text-xs text-gray-400 mt-1">Create a topic first to start adding questions</p>
+            <a href="{{ url_for('admin.manage_topics') }}" class="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition">
+                <i class="fas fa-plus-circle mr-2"></i>Create Topic
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Search Results Grid (hidden by default) -->
+    <div id="searchResultsGrid" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-search text-purple-500 mr-2"></i>Search Results
+            </h2>
+            <button onclick="clearSearch()" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                <i class="fas fa-arrow-left"></i> Back to Topics
+            </button>
+        </div>
+        <div id="searchResultsContainer" class="space-y-4">
+            <!-- Results will be populated here -->
+        </div>
+    </div>
+</div>
+
+<!-- Topic Questions Modal -->
+<div id="topicQuestionsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <!-- Fixed Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-t-2xl p-5 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 rounded-xl p-2">
+                        <i class="fas fa-question-circle text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 id="topicModalTitle" class="text-xl font-bold text-white">Topic Questions</h3>
+                        <p id="topicModalSubtitle" class="text-purple-100 text-sm mt-0.5">Manage questions for this topic</p>
+                    </div>
+                </div>
+                <button onclick="closeTopicModal()" class="text-white/70 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Scrollable Content -->
+        <div class="p-6 flex-1 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+            <!-- Add Question Button -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-2">
+                    <div id="topicIcon" class="w-10 h-10 rounded-lg flex items-center justify-center"></div>
+                    <div>
+                        <span id="questionCount" class="text-sm text-gray-500"></span>
+                    </div>
+                </div>
+                <button id="addQuestionBtn" onclick="openAddQuestionFromModal()" 
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+                    <i class="fas fa-plus-circle"></i>
+                    Add Question
+                </button>
+            </div>
+            
+            <!-- In-Modal Search (within current topic) -->
+            <div class="mb-4 relative">
+                <input type="text" id="modalSearchInput" 
+                       placeholder="🔍 Search within this topic..." 
+                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+            </div>
+            
+            <!-- Questions List Container -->
+            <div id="questionsListContainer" class="space-y-3">
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500">Loading questions...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fixed Footer -->
+        <div class="flex justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-2xl flex-shrink-0">
+            <button onclick="closeTopicModal()" class="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition font-medium">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Question Modal -->
+<div id="questionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <!-- Fixed Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-t-2xl p-5 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 rounded-xl p-2">
+                        <i class="fas fa-question-circle text-white text-xl"></i>
+                    </div>
+                    <h3 id="modalTitle" class="text-xl font-bold text-white">Add New Question</h3>
+                </div>
+                <button onclick="closeModal()" class="text-white/70 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <p class="text-purple-100 text-sm mt-2 ml-14" id="modalSubtitle">Fill in the details below to create a quiz question</p>
+        </div>
+        
+        <!-- Scrollable Form -->
+        <form id="questionForm" method="POST" action="{{ url_for('admin.create_question') }}" class="flex-1 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="p-6 space-y-5">
+                <input type="hidden" id="question_id" name="question_id">
+                <input type="hidden" id="current_topic_id" name="topic_id">
+                
+                <!-- Question Text -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-question-circle text-purple-500 mr-2"></i>
+                        Question Text
+                    </label>
+                    <textarea id="question_text" name="question_text" rows="3" required
+                              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                              placeholder="Enter the question here..."></textarea>
+                </div>
+                
+                <!-- Options -->
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-list-ul text-purple-500 mr-2"></i>
+                        Answer Options
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">
+                                <span class="inline-block w-5 h-5 rounded-full bg-green-500 text-white text-xs text-center mr-1">A</span>
+                                Option A
+                            </label>
+                            <input type="text" id="option_a" name="option_a" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                                   placeholder="Enter option A">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">
+                                <span class="inline-block w-5 h-5 rounded-full bg-green-500 text-white text-xs text-center mr-1">B</span>
+                                Option B
+                            </label>
+                            <input type="text" id="option_b" name="option_b" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                                   placeholder="Enter option B">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">
+                                <span class="inline-block w-5 h-5 rounded-full bg-green-500 text-white text-xs text-center mr-1">C</span>
+                                Option C
+                            </label>
+                            <input type="text" id="option_c" name="option_c" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                                   placeholder="Enter option C">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">
+                                <span class="inline-block w-5 h-5 rounded-full bg-green-500 text-white text-xs text-center mr-1">D</span>
+                                Option D
+                            </label>
+                            <input type="text" id="option_d" name="option_d" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                                   placeholder="Enter option D">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Correct Answer -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        Correct Answer
+                    </label>
+                    <div class="flex gap-3">
+                        {% for letter in ['A', 'B', 'C', 'D'] %}
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-green-50 transition">
+                            <input type="radio" name="correct_answer" value="{{ letter }}" class="w-4 h-4 text-green-600 focus:ring-green-500">
+                            <span class="font-medium">{{ letter }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Explanation -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                        Explanation (Optional)
+                    </label>
+                    <textarea id="explanation" name="explanation" rows="2"
+                              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                              placeholder="Add an explanation for why this answer is correct..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Fixed Footer -->
+            <div class="flex justify-end gap-3 p-5 border-t bg-gray-50 rounded-b-2xl flex-shrink-0">
+                <button type="button" onclick="closeModal()" 
+                        class="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition font-medium">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl transition-all duration-300 font-medium shadow-md hover:shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Question
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .search-highlight {
+        background-color: #fef3c7;
+        padding: 0 2px;
+        border-radius: 3px;
+    }
+</style>
+
+<script>
+    let currentTopicId = null;
+    let currentTopicName = null;
+    let allQuestions = []; // Store all questions for client-side search
+    
+    // Get CSRF token
+    function getCsrfToken() {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (token) return token;
+        const name = 'csrf_token';
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+    
+    // Global search across all topics
+    function performGlobalSearch() {
+        const searchTerm = document.getElementById('searchQuestionInput').value.trim().toLowerCase();
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const topicGrid = document.getElementById('topicCardsGrid');
+        const searchResultsGrid = document.getElementById('searchResultsGrid');
+        const searchResultInfo = document.getElementById('searchResultInfo');
+        const resultsContainer = document.getElementById('searchResultsContainer');
+        
+        if (searchTerm === '') {
+            // Show topics grid, hide search results
+            topicGrid.classList.remove('hidden');
+            searchResultsGrid.classList.add('hidden');
+            searchResultInfo.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            return;
+        }
+        
+        // Show clear button
+        if (clearBtn) clearBtn.classList.remove('hidden');
+        
+        // Search across all topics
+        fetch(`/admin/api/questions/search?q=${encodeURIComponent(searchTerm)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Hide topics grid, show search results
+                    topicGrid.classList.add('hidden');
+                    searchResultsGrid.classList.remove('hidden');
+                    searchResultInfo.classList.remove('hidden');
+                    document.getElementById('searchResultCount').textContent = data.questions.length;
+                    
+                    if (data.questions.length === 0) {
+                        resultsContainer.innerHTML = `
+                            <div class="bg-white rounded-xl shadow-md p-12 text-center">
+                                <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
+                                <p class="text-gray-500">No questions found matching "<strong>${escapeHtml(searchTerm)}</strong>"</p>
+                                <button onclick="clearSearch()" class="mt-4 text-purple-600 hover:text-purple-700">Clear Search</button>
+                            </div>
+                        `;
+                    } else {
+                        // Group questions by topic
+                        const grouped = {};
+                        data.questions.forEach(q => {
+                            if (!grouped[q.topic_name]) grouped[q.topic_name] = [];
+                            grouped[q.topic_name].push(q);
+                        });
+                        
+                        let html = '';
+                        for (const [topicName, questions] of Object.entries(grouped)) {
+                            html += `
+                                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 border-b border-purple-200">
+                                        <h3 class="font-bold text-lg text-purple-800">
+                                            <i class="fas fa-folder mr-2"></i>${escapeHtml(topicName)}
+                                            <span class="text-sm font-normal text-gray-500 ml-2">(${questions.length} questions)</span>
+                                        </h3>
+                                    </div>
+                                    <div class="divide-y divide-gray-100">
+                            `;
+                            questions.forEach(question => {
+                                // Highlight search term in question text
+                                let highlightedText = escapeHtml(question.question_text);
+                                if (searchTerm) {
+                                    const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+                                    highlightedText = highlightedText.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+                                }
+                                
+                                html += `
+                                    <div class="p-4 hover:bg-gray-50 transition">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <span class="text-xs text-gray-400">#${question.id}</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                                        Answer: ${question.correct_answer}
+                                                    </span>
+                                                    <span class="text-xs text-gray-400">Topic: ${escapeHtml(question.topic_name)}</span>
+                                                </div>
+                                                <p class="text-gray-800 font-medium mb-3">${highlightedText}</p>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                                    <div class="flex items-center gap-2"><span class="font-bold w-5">A:</span> ${escapeHtml(question.option_a)}</div>
+                                                    <div class="flex items-center gap-2"><span class="font-bold w-5">B:</span> ${escapeHtml(question.option_b)}</div>
+                                                    <div class="flex items-center gap-2"><span class="font-bold w-5">C:</span> ${escapeHtml(question.option_c)}</div>
+                                                    <div class="flex items-center gap-2"><span class="font-bold w-5">D:</span> ${escapeHtml(question.option_d)}</div>
+                                                </div>
+                                                ${question.explanation ? `<div class="mt-2 text-xs text-gray-500"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i>${escapeHtml(question.explanation)}</div>` : ''}
+                                            </div>
+                                            <div class="flex gap-1 ml-3">
+                                                <button onclick="openEditQuestionFromSearch(${question.id})" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button onclick="confirmDeleteFromSearch(${question.id})" class="p-1.5 text-red-500 hover:bg-red-50 rounded transition" title="Delete">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            html += `
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        resultsContainer.innerHTML = html;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                resultsContainer.innerHTML = `<div class="text-center py-8 text-red-500">Error searching questions</div>`;
+            });
+    }
+    
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    function clearSearch() {
+        document.getElementById('searchQuestionInput').value = '';
+        document.getElementById('topicCardsGrid').classList.remove('hidden');
+        document.getElementById('searchResultsGrid').classList.add('hidden');
+        document.getElementById('searchResultInfo').classList.add('hidden');
+        document.getElementById('clearSearchBtn').classList.add('hidden');
+    }
+    
+    function openEditQuestionFromSearch(id) {
+        fetch(`/admin/api/question/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalTitle').innerText = 'Edit Question';
+                    document.getElementById('modalSubtitle').innerText = 'Modify the question details';
+                    document.getElementById('questionForm').action = `/admin/questions/${id}/edit`;
+                    document.getElementById('question_id').value = data.question.id;
+                    document.getElementById('current_topic_id').value = data.question.topic_id;
+                    document.getElementById('question_text').value = data.question.question_text;
+                    document.getElementById('option_a').value = data.question.option_a;
+                    document.getElementById('option_b').value = data.question.option_b;
+                    document.getElementById('option_c').value = data.question.option_c;
+                    document.getElementById('option_d').value = data.question.option_d;
+                    document.querySelector(`input[name="correct_answer"][value="${data.question.correct_answer}"]`).checked = true;
+                    document.getElementById('explanation').value = data.question.explanation || '';
+                    document.getElementById('questionModal').classList.remove('hidden');
+                    document.getElementById('questionModal').classList.add('flex');
+                }
+            });
+    }
+    
+    function confirmDeleteFromSearch(id) {
+        if (confirm('⚠️ Are you sure you want to delete this question? This action cannot be undone.')) {
+            const csrfToken = getCsrfToken();
+            fetch(`/admin/questions/${id}/delete`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh search results
+                    performGlobalSearch();
+                    // Also refresh topic counts if needed
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete question'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to delete question. Please try again.');
+            });
+        }
+    }
+    
+    // Open topic questions modal
+    function openTopicQuestions(topicId, topicName, icon, color) {
+        currentTopicId = topicId;
+        currentTopicName = topicName;
+        
+        document.getElementById('topicModalTitle').innerText = topicName;
+        document.getElementById('topicModalSubtitle').innerText = 'Manage questions for ' + topicName;
+        
+        const iconDiv = document.getElementById('topicIcon');
+        iconDiv.innerHTML = `<i class="${icon} text-xl"></i>`;
+        iconDiv.style.backgroundColor = color + '20';
+        iconDiv.style.color = color;
+        
+        document.getElementById('topicQuestionsModal').classList.remove('hidden');
+        document.getElementById('topicQuestionsModal').classList.add('flex');
+        
+        loadTopicQuestions(topicId);
+    }
+    
+    // Load questions via AJAX
+    function loadTopicQuestions(topicId) {
+        fetch(`/admin/api/topic/${topicId}/questions`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allQuestions = data.questions;
+                filterModalQuestions();
+                document.getElementById('questionCount').innerHTML = `<i class="fas fa-database text-xs mr-1"></i>${data.questions.length} questions`;
+            } else {
+                showError('Error loading questions: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Failed to load questions. Please check your connection.');
+        });
+    }
+    
+    function filterModalQuestions() {
+        const searchTerm = document.getElementById('modalSearchInput')?.value.trim().toLowerCase() || '';
+        let filtered = allQuestions;
+        
+        if (searchTerm) {
+            filtered = allQuestions.filter(q => 
+                q.question_text.toLowerCase().includes(searchTerm) ||
+                q.option_a.toLowerCase().includes(searchTerm) ||
+                q.option_b.toLowerCase().includes(searchTerm) ||
+                q.option_c.toLowerCase().includes(searchTerm) ||
+                q.option_d.toLowerCase().includes(searchTerm) ||
+                (q.explanation && q.explanation.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        displayModalQuestions(filtered, searchTerm);
+    }
+    
+    function displayModalQuestions(questions, searchTerm = '') {
+        if (!questions || questions.length === 0) {
+            document.getElementById('questionsListContainer').innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-inbox text-gray-400 text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500">No questions found</p>
+                    <button onclick="openAddQuestionFromModal()" class="mt-3 text-green-600 hover:text-green-700 text-sm font-medium">
+                        <i class="fas fa-plus-circle mr-1"></i> Add your first question
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        questions.forEach(question => {
+            let questionText = escapeHtml(question.question_text);
+            let optionA = escapeHtml(question.option_a);
+            let optionB = escapeHtml(question.option_b);
+            let optionC = escapeHtml(question.option_c);
+            let optionD = escapeHtml(question.option_d);
+            let explanation = question.explanation ? escapeHtml(question.explanation) : '';
+            
+            if (searchTerm) {
+                const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+                questionText = questionText.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+                optionA = optionA.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+                optionB = optionB.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+                optionC = optionC.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+                optionD = optionD.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+                explanation = explanation.replace(regex, '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
+            }
+            
+            html += `
+                <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-xs text-gray-400">#${question.id}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                    Answer: ${question.correct_answer}
+                                </span>
+                            </div>
+                            <p class="text-gray-800 font-medium mb-3">${questionText}</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div class="flex items-center gap-2 p-2 rounded ${question.correct_answer === 'A' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}">
+                                    <div class="w-5 h-5 rounded-full ${question.correct_answer === 'A' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'} flex items-center justify-center text-xs font-bold">A</div>
+                                    <span class="text-sm text-gray-700">${optionA}</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-2 rounded ${question.correct_answer === 'B' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}">
+                                    <div class="w-5 h-5 rounded-full ${question.correct_answer === 'B' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'} flex items-center justify-center text-xs font-bold">B</div>
+                                    <span class="text-sm text-gray-700">${optionB}</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-2 rounded ${question.correct_answer === 'C' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}">
+                                    <div class="w-5 h-5 rounded-full ${question.correct_answer === 'C' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'} flex items-center justify-center text-xs font-bold">C</div>
+                                    <span class="text-sm text-gray-700">${optionC}</span>
+                                </div>
+                                <div class="flex items-center gap-2 p-2 rounded ${question.correct_answer === 'D' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}">
+                                    <div class="w-5 h-5 rounded-full ${question.correct_answer === 'D' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'} flex items-center justify-center text-xs font-bold">D</div>
+                                    <span class="text-sm text-gray-700">${optionD}</span>
+                                </div>
+                            </div>
+                            ${question.explanation ? `
+                            <div class="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                                <i class="fas fa-lightbulb mr-1"></i> ${explanation}
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="flex gap-1 ml-3">
+                            <button onclick="openEditQuestion(${question.id})" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="confirmDeleteQuestion(${question.id})" class="p-1.5 text-red-500 hover:bg-red-50 rounded transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('questionsListContainer').innerHTML = html;
+    }
+    
+    function showError(message) {
+        document.getElementById('questionsListContainer').innerHTML = `
+            <div class="text-center py-8">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500">${message}</p>
+                <button onclick="loadTopicQuestions(currentTopicId)" class="mt-3 text-purple-600 hover:text-purple-700 text-sm">
+                    <i class="fas fa-sync-alt mr-1"></i> Try Again
+                </button>
+            </div>
+        `;
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function openAddQuestionFromModal() {
+        if (!currentTopicId) return;
+        document.getElementById('modalTitle').innerText = 'Add Question to ' + currentTopicName;
+        document.getElementById('modalSubtitle').innerText = 'Create a new question for this topic';
+        document.getElementById('questionForm').action = "{{ url_for('admin.create_question') }}";
+        document.getElementById('question_id').value = '';
+        document.getElementById('current_topic_id').value = currentTopicId;
+        document.getElementById('question_text').value = '';
+        document.getElementById('option_a').value = '';
+        document.getElementById('option_b').value = '';
+        document.getElementById('option_c').value = '';
+        document.getElementById('option_d').value = '';
+        document.querySelectorAll('input[name="correct_answer"]').forEach(radio => radio.checked = false);
+        document.getElementById('explanation').value = '';
+        document.getElementById('questionModal').classList.remove('hidden');
+        document.getElementById('questionModal').classList.add('flex');
+    }
+    
+    function openEditQuestion(id) {
+        fetch(`/admin/api/question/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalTitle').innerText = 'Edit Question';
+                    document.getElementById('modalSubtitle').innerText = 'Modify the question details';
+                    document.getElementById('questionForm').action = `/admin/questions/${id}/edit`;
+                    document.getElementById('question_id').value = data.question.id;
+                    document.getElementById('current_topic_id').value = data.question.topic_id;
+                    document.getElementById('question_text').value = data.question.question_text;
+                    document.getElementById('option_a').value = data.question.option_a;
+                    document.getElementById('option_b').value = data.question.option_b;
+                    document.getElementById('option_c').value = data.question.option_c;
+                    document.getElementById('option_d').value = data.question.option_d;
+                    document.querySelector(`input[name="correct_answer"][value="${data.question.correct_answer}"]`).checked = true;
+                    document.getElementById('explanation').value = data.question.explanation || '';
+                    document.getElementById('questionModal').classList.remove('hidden');
+                    document.getElementById('questionModal').classList.add('flex');
+                }
+            });
+    }
+    
+    function closeModal() {
+        document.getElementById('questionModal').classList.add('hidden');
+        document.getElementById('questionModal').classList.remove('flex');
+    }
+    
+    function closeTopicModal() {
+        document.getElementById('topicQuestionsModal').classList.add('hidden');
+        document.getElementById('topicQuestionsModal').classList.remove('flex');
+        currentTopicId = null;
+        allQuestions = [];
+    }
+    
+    function confirmDeleteQuestion(id) {
+        if (confirm('⚠️ Are you sure you want to delete this question? This action cannot be undone.')) {
+            const csrfToken = getCsrfToken();
+            fetch(`/admin/questions/${id}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (currentTopicId) {
+                        loadTopicQuestions(currentTopicId);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete question'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to delete question. Please try again.');
+            });
+        }
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchQuestionInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', performGlobalSearch);
+        }
+        
+        const modalSearchInput = document.getElementById('modalSearchInput');
+        if (modalSearchInput) {
+            modalSearchInput.addEventListener('input', filterModalQuestions);
+        }
+        
+        const questionForm = document.getElementById('questionForm');
+        if (questionForm) {
+            questionForm.addEventListener('submit', function(e) {
+                console.log('Submitting form to:', this.action);
+            });
+        }
+    });
+</script>
+{% endblock %}

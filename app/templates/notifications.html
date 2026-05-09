@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="mb-6 flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Notifications</h1>
+                <p class="text-gray-600 mt-1">Stay updated with your activity</p>
+            </div>
+            <div class="flex gap-2">
+                {% if notifications.items %}
+                <button onclick="markAllAsRead()" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
+                    <i class="fas fa-check-double"></i>
+                    <span>Mark all as read</span>
+                </button>
+                <button onclick="clearAllNotifications()" 
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium flex items-center gap-2">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Clear all</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-t-xl shadow-sm overflow-hidden">
+            <div class="flex flex-wrap border-b border-gray-200">
+                <button onclick="filterNotifications('all')" 
+                        id="filter-all"
+                        class="px-6 py-3 text-center font-medium transition-all relative">
+                    <i class="fas fa-bell mr-2"></i>
+                    All
+                    <div id="filter-all-indicator" class="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500"></div>
+                </button>
+                <button onclick="filterNotifications('unread')" 
+                        id="filter-unread"
+                        class="px-6 py-3 text-center font-medium text-gray-500 hover:text-gray-700 transition-all relative">
+                    <i class="fas fa-envelope mr-2"></i>
+                    Unread
+                    <span id="unread-badge" class="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                        {{ unread_count }}
+                    </span>
+                    <div id="filter-unread-indicator" class="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 hidden"></div>
+                </button>
+                <button onclick="filterNotifications('friend_requests')" 
+                        id="filter-friend"
+                        class="px-6 py-3 text-center font-medium text-gray-500 hover:text-gray-700 transition-all relative">
+                    <i class="fas fa-user-friends mr-2"></i>
+                    Friend Requests
+                    <div id="filter-friend-indicator" class="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 hidden"></div>
+                </button>
+                <button onclick="filterNotifications('messages')" 
+                        id="filter-messages"
+                        class="px-6 py-3 text-center font-medium text-gray-500 hover:text-gray-700 transition-all relative">
+                    <i class="fas fa-comment mr-2"></i>
+                    Messages
+                    <div id="filter-messages-indicator" class="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 hidden"></div>
+                </button>
+                <button onclick="filterNotifications('achievements')" 
+                        id="filter-achievements"
+                        class="px-6 py-3 text-center font-medium text-gray-500 hover:text-gray-700 transition-all relative">
+                    <i class="fas fa-trophy mr-2"></i>
+                    Achievements
+                    <div id="filter-achievements-indicator" class="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 hidden"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div id="notifications-container" class="bg-white rounded-b-xl shadow-sm overflow-hidden">
+            {% if notifications.items %}
+                <div class="divide-y divide-gray-100">
+                    {% for notification in notifications.items %}
+                    <div class="notification-item p-4 hover:bg-gray-50 transition {% if not notification.is_read %}bg-blue-50/30{% endif %}" 
+                         data-notification-id="{{ notification.id }}"
+                         data-notification-type="{{ notification.notification_type }}"
+                         data-is-read="{{ notification.is_read|lower }}">
+                        <div class="flex items-start gap-4">
+                            <!-- Icon -->
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full {% if not notification.is_read %}bg-blue-100{% else %}bg-gray-100{% endif %} flex items-center justify-center">
+                                <i class="{{ notification.icon or get_notification_icon(notification.notification_type) }} {% if not notification.is_read %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between flex-wrap gap-2">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900 {% if not notification.is_read %}text-gray-900{% else %}text-gray-700{% endif %}">
+                                            {{ notification.title }}
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mt-1">{{ notification.message }}</p>
+                                        <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                                            <span><i class="far fa-clock mr-1"></i>{{ notification.get_time_ago() }}</span>
+                                            {% if notification.notification_type == 'friend_request' %}
+                                            <span class="text-blue-600"><i class="fas fa-user-plus mr-1"></i>Friend Request</span>
+                                            {% elif notification.notification_type == 'message' %}
+                                            <span class="text-green-600"><i class="fas fa-comment mr-1"></i>Message</span>
+                                            {% elif notification.notification_type == 'achievement' %}
+                                            <span class="text-yellow-600"><i class="fas fa-trophy mr-1"></i>Achievement</span>
+                                            {% elif notification.notification_type == 'quiz_result' %}
+                                            <span class="text-purple-600"><i class="fas fa-chart-line mr-1"></i>Quiz Result</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        {% if not notification.is_read %}
+                                        <button onclick="markAsRead({{ notification.id }})" 
+                                                class="p-2 text-gray-400 hover:text-blue-600 transition" title="Mark as read">
+                                            <i class="fas fa-check-circle text-sm"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button onclick="deleteNotification({{ notification.id }})" 
+                                                class="p-2 text-gray-400 hover:text-red-600 transition" title="Delete">
+                                            <i class="fas fa-times text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons for Friend Requests -->
+                                {% if notification.notification_type == 'friend_request' and notification.related_id %}
+                                <div class="mt-3 flex gap-2">
+                                    <button onclick="acceptFriendRequest({{ notification.related_id }}, {{ notification.id }})" 
+                                            class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs font-medium flex items-center gap-1">
+                                        <i class="fas fa-check"></i>
+                                        <span>Accept</span>
+                                    </button>
+                                    <button onclick="declineFriendRequest({{ notification.related_id }}, {{ notification.id }})" 
+                                            class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-xs font-medium flex items-center gap-1">
+                                        <i class="fas fa-times"></i>
+                                        <span>Decline</span>
+                                    </button>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- View Button for Quiz Results -->
+                                {% if notification.notification_type == 'quiz_result' and notification.action_url %}
+                                <div class="mt-3">
+                                    <a href="{{ notification.action_url }}" 
+                                       class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>View Results</span>
+                                        <i class="fas fa-arrow-right text-xs"></i>
+                                    </a>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- View Button for Messages -->
+                                {% if notification.notification_type == 'message' and notification.action_url %}
+                                <div class="mt-3">
+                                    <a href="{{ notification.action_url }}" 
+                                       class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                        <i class="fas fa-reply"></i>
+                                        <span>Reply</span>
+                                        <i class="fas fa-arrow-right text-xs"></i>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if notifications.pages > 1 %}
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    <div class="flex justify-center gap-2">
+                        {% if notifications.has_prev %}
+                        <a href="{{ url_for('main.notifications', page=notifications.prev_num) }}" 
+                           class="px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                            &laquo; Previous
+                        </a>
+                        {% endif %}
+                        
+                        <span class="px-3 py-1 text-gray-600 text-sm">
+                            Page {{ notifications.page }} of {{ notifications.pages }}
+                        </span>
+                        
+                        {% if notifications.has_next %}
+                        <a href="{{ url_for('main.notifications', page=notifications.next_num) }}" 
+                           class="px-3 py-1 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                            Next &raquo;
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="py-16 text-center">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-bell-slash text-4xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">No notifications</h3>
+                    <p class="text-gray-500 max-w-sm mx-auto">
+                        When you receive notifications about friend requests, messages, and activity, they will appear here.
+                    </p>
+                    <a href="{{ url_for('main.dashboard') }}" class="mt-6 inline-block text-green-600 hover:text-green-700">
+                        <i class="fas fa-home mr-2"></i>Go to Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+<script>
+let currentFilter = 'all';
+
+// CSRF Token Helper
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
+// Show Toast
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    
+    const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    toast.className = `${bgColor} text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full`;
+    toast.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span class="text-sm font-medium">${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Filter Notifications
+function filterNotifications(filter) {
+    currentFilter = filter;
+    const notifications = document.querySelectorAll('.notification-item');
+    
+    // Update UI indicators
+    const filters = ['all', 'unread', 'friend_requests', 'messages', 'achievements'];
+    filters.forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        const indicator = document.getElementById(`filter-${f}-indicator`);
+        if (btn) {
+            if (f === filter) {
+                btn.classList.remove('text-gray-500');
+                btn.classList.add('text-gray-900');
+                if (indicator) indicator.classList.remove('hidden');
+            } else {
+                btn.classList.remove('text-gray-900');
+                btn.classList.add('text-gray-500');
+                if (indicator) indicator.classList.add('hidden');
+            }
+        }
+    });
+    
+    // Filter notifications
+    notifications.forEach(notification => {
+        const type = notification.dataset.notificationType;
+        const isRead = notification.dataset.isRead === 'true';
+        
+        if (filter === 'all') {
+            notification.style.display = '';
+        } else if (filter === 'unread') {
+            notification.style.display = !isRead ? '' : 'none';
+        } else if (filter === 'friend_requests') {
+            notification.style.display = type === 'friend_request' ? '' : 'none';
+        } else if (filter === 'messages') {
+            notification.style.display = type === 'message' ? '' : 'none';
+        } else if (filter === 'achievements') {
+            notification.style.display = type === 'achievement' ? '' : 'none';
+        }
+    });
+    
+    // Show/hide empty state message
+    const visibleCount = Array.from(notifications).filter(n => n.style.display !== 'none').length;
+    const container = document.getElementById('notifications-container');
+    const existingEmpty = container.querySelector('.filter-empty-state');
+    
+    if (visibleCount === 0 && !existingEmpty) {
+        const emptyHtml = `
+            <div class="py-16 text-center filter-empty-state">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-filter text-4xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No ${filter === 'unread' ? 'unread' : filter === 'friend_requests' ? 'friend request' : filter === 'messages' ? 'message' : filter === 'achievements' ? 'achievement' : ''} notifications</h3>
+                <p class="text-gray-500">Try a different filter</p>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', emptyHtml);
+    } else if (visibleCount > 0 && existingEmpty) {
+        existingEmpty.remove();
+    }
+}
+
+// Mark as Read
+async function markAsRead(notificationId) {
+    try {
+        const response = await fetch(`/notifications/api/notifications/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ notification_id: notificationId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const notification = document.querySelector(`.notification-item[data-notification-id="${notificationId}"]`);
+            if (notification) {
+                notification.classList.remove('bg-blue-50/30');
+                notification.dataset.isRead = 'true';
+                
+                // Update icon
+                const iconDiv = notification.querySelector('.w-10.h-10');
+                const icon = notification.querySelector('.w-10.h-10 i');
+                if (iconDiv) iconDiv.classList.remove('bg-blue-100');
+                if (iconDiv) iconDiv.classList.add('bg-gray-100');
+                if (icon) {
+                    icon.classList.remove('text-blue-600');
+                    icon.classList.add('text-gray-500');
+                }
+                
+                // Remove the mark as read button
+                const markBtn = notification.querySelector('[onclick*="markAsRead"]');
+                if (markBtn) markBtn.remove();
+            }
+            
+            // Update unread count
+            updateUnreadCount();
+            showToast('Marked as read', 'success');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to mark as read', 'error');
+    }
+}
+
+// Mark All as Read
+async function markAllAsRead() {
+    try {
+        const response = await fetch(`/notifications/api/notifications/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ notification_id: 'all' })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const notifications = document.querySelectorAll('.notification-item');
+            notifications.forEach(notification => {
+                notification.classList.remove('bg-blue-50/30');
+                notification.dataset.isRead = 'true';
+                
+                const iconDiv = notification.querySelector('.w-10.h-10');
+                const icon = notification.querySelector('.w-10.h-10 i');
+                if (iconDiv) iconDiv.classList.remove('bg-blue-100');
+                if (iconDiv) iconDiv.classList.add('bg-gray-100');
+                if (icon) {
+                    icon.classList.remove('text-blue-600');
+                    icon.classList.add('text-gray-500');
+                }
+                
+                const markBtn = notification.querySelector('[onclick*="markAsRead"]');
+                if (markBtn) markBtn.remove();
+            });
+            
+            updateUnreadCount();
+            showToast('All notifications marked as read', 'success');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to mark all as read', 'error');
+    }
+}
+
+// Delete Notification
+async function deleteNotification(notificationId) {
+    try {
+        const response = await fetch(`/notifications/api/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const notification = document.querySelector(`.notification-item[data-notification-id="${notificationId}"]`);
+            if (notification) {
+                notification.remove();
+            }
+            
+            updateUnreadCount();
+            showToast('Notification deleted', 'info');
+            
+            // Check if no notifications left
+            const remaining = document.querySelectorAll('.notification-item').length;
+            if (remaining === 0) {
+                location.reload();
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to delete notification', 'error');
+    }
+}
+
+// Clear All Notifications
+async function clearAllNotifications() {
+    if (!confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) return;
+    
+    try {
+        const response = await fetch(`/notifications/api/notifications/clear-all`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to clear notifications', 'error');
+    }
+}
+
+// Accept Friend Request from Notification
+async function acceptFriendRequest(requestId, notificationId) {
+    try {
+        const response = await fetch(`/community/api/accept-request/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Connection accepted!', 'success');
+            // Delete the notification
+            await deleteNotification(notificationId);
+        } else {
+            showToast(data.message || 'Failed to accept', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error', 'error');
+    }
+}
+
+// Decline Friend Request from Notification
+async function declineFriendRequest(requestId, notificationId) {
+    try {
+        const response = await fetch(`/community/api/decline-request/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Request declined', 'info');
+            // Delete the notification
+            await deleteNotification(notificationId);
+        } else {
+            showToast(data.message || 'Failed to decline', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error', 'error');
+    }
+}
+
+// Update Unread Count
+async function updateUnreadCount() {
+    try {
+        const response = await fetch('/notifications/api/notifications?limit=1&unread_only=true');
+        const data = await response.json();
+        
+        const badge = document.getElementById('unread-badge');
+        if (badge) {
+            if (data.unread_count > 0) {
+                badge.textContent = data.unread_count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        // Also update header badge
+        const headerBadge = document.querySelector('.notification-badge');
+        if (headerBadge) {
+            if (data.unread_count > 0) {
+                headerBadge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                headerBadge.style.display = 'flex';
+            } else {
+                headerBadge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating unread count:', error);
+    }
+}
+
+// Helper function to get icon based on type
+function getNotificationIcon(type) {
+    const icons = {
+        'friend_request': 'fas fa-user-plus',
+        'message': 'fas fa-comment',
+        'achievement': 'fas fa-trophy',
+        'quiz_result': 'fas fa-chart-line',
+        'goal_completed': 'fas fa-check-circle',
+        'study_suggestion': 'fas fa-graduation-cap',
+        'like': 'fas fa-heart',
+        'comment': 'fas fa-comment-dots',
+        'post_reply': 'fas fa-reply'
+    };
+    return icons[type] || 'fas fa-bell';
+}
+</script>
+{% endblock %}

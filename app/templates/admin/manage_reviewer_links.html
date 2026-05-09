@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Manage Reviewer Materials & Links</h1>
+            <p class="text-gray-500 text-sm">Manage study materials, Google Drive links, and YouTube playlists for each topic</p>
+        </div>
+        <button onclick="openCreateModal()" 
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Material Link
+        </button>
+    </div>
+
+    <!-- Topics Tabs -->
+    <div class="mb-6 border-b border-gray-200">
+        <nav class="flex flex-wrap gap-2">
+            {% for topic_name in topics %}
+            <button onclick="filterByTopic('{{ topic_name }}')" 
+                    id="tab-{{ topic_name|replace(' ', '_') }}"
+                    class="topic-tab px-4 py-2 text-sm font-medium rounded-t-lg transition-all
+                           {% if loop.first %}bg-green-50 text-green-700 border-b-2 border-green-500{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-50{% endif %}">
+                {{ topic_name }}
+            </button>
+            {% endfor %}
+        </nav>
+    </div>
+
+    <!-- Links Table -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="links-table-body" class="bg-white divide-y divide-gray-200">
+                    {% for link in links %}
+                    <tr data-topic="{{ link.topic_name }}">
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ link.material_title }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ link.link_name }}</td>
+                        <td class="px-6 py-4 text-sm text-blue-600 truncate max-w-xs">
+                            <a href="{{ link.link_url }}" target="_blank" class="hover:underline">{{ link.link_url|truncate(50) }}</a>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full 
+                                {% if link.link_type == 'google_drive' %}bg-blue-100 text-blue-700
+                                {% elif link.link_type == 'youtube' %}bg-red-100 text-red-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ link.link_type|replace('_', ' ')|title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ link.display_order }}</td>
+                        <td class="px-6 py-4 text-right text-sm font-medium">
+                            <button onclick="editLink({{ link.id }})" class="text-blue-600 hover:text-blue-900 mr-3">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteLink({{ link.id }})" class="text-red-600 hover:text-red-900">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                            <i class="fas fa-link text-4xl mb-2 block"></i>
+                            No material links yet. Click "Add Material Link" to create one.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="linkModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Add Material Link</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="linkForm" method="POST" action="{{ url_for('admin.create_reviewer_link') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="link_id" name="link_id">
+            
+            <div class="p-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                    <select id="topic_name" name="topic_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <option value="">Select Topic</option>
+                        {% for topic_name in topics %}
+                        <option value="{{ topic_name }}">{{ topic_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Material Title</label>
+                    <input type="text" id="material_title" name="material_title" required placeholder="e.g., 1. Agricultural and Biosystems Power Engineering"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Link Name</label>
+                    <input type="text" id="link_name" name="link_name" required placeholder="e.g., Review Materials, AB Engineering Guild Videos"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                    <input type="url" id="link_url" name="link_url" required placeholder="https://drive.google.com/..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Link Type</label>
+                    <select id="link_type" name="link_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                        <option value="google_drive">Google Drive</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="external">External Website</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+                    <input type="number" id="display_order" name="display_order" value="0"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                    <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 p-4 border-t bg-gray-50 rounded-b-xl">
+                <button type="button" onclick="closeModal()" 
+                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">Save Link</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentFilter = '{% if topics %}{{ topics[0] }}{% endif %}';
+
+function filterByTopic(topicName) {
+    currentFilter = topicName;
+    
+    // Update tab styles
+    document.querySelectorAll('.topic-tab').forEach(tab => {
+        tab.classList.remove('bg-green-50', 'text-green-700', 'border-b-2', 'border-green-500');
+        tab.classList.add('text-gray-500');
+    });
+    const activeTab = document.getElementById(`tab-${topicName.replace(/ /g, '_')}`);
+    activeTab.classList.add('bg-green-50', 'text-green-700', 'border-b-2', 'border-green-500');
+    activeTab.classList.remove('text-gray-500');
+    
+    // Filter table rows
+    const rows = document.querySelectorAll('#links-table-body tr');
+    rows.forEach(row => {
+        if (row.getAttribute('data-topic') === topicName) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function openCreateModal() {
+    document.getElementById('modalTitle').innerText = 'Add Material Link';
+    document.getElementById('linkForm').action = "{{ url_for('admin.create_reviewer_link') }}";
+    document.getElementById('link_id').value = '';
+    document.getElementById('topic_name').value = currentFilter;
+    document.getElementById('material_title').value = '';
+    document.getElementById('link_name').value = '';
+    document.getElementById('link_url').value = '';
+    document.getElementById('link_type').value = 'google_drive';
+    document.getElementById('display_order').value = '0';
+    document.getElementById('linkModal').classList.remove('hidden');
+    document.getElementById('linkModal').classList.add('flex');
+}
+
+function editLink(id) {
+    fetch(`/admin/api/reviewer-link/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('modalTitle').innerText = 'Edit Material Link';
+                document.getElementById('linkForm').action = `/admin/reviewer-link/${id}/edit`;
+                document.getElementById('link_id').value = data.link.id;
+                document.getElementById('topic_name').value = data.link.topic_name;
+                document.getElementById('material_title').value = data.link.material_title;
+                document.getElementById('link_name').value = data.link.link_name;
+                document.getElementById('link_url').value = data.link.link_url;
+                document.getElementById('link_type').value = data.link.link_type;
+                document.getElementById('display_order').value = data.link.display_order;
+                document.getElementById('linkModal').classList.remove('hidden');
+                document.getElementById('linkModal').classList.add('flex');
+            }
+        });
+}
+
+function deleteLink(id) {
+    if (confirm('Are you sure you want to delete this link?')) {
+        fetch(`/admin/reviewer-link/${id}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+
+function closeModal() {
+    document.getElementById('linkModal').classList.add('hidden');
+    document.getElementById('linkModal').classList.remove('flex');
+}
+</script>
+{% endblock %}

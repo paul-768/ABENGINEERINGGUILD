@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Study Topics</h1>
+            <p class="text-gray-500 text-sm">Browse available study topics</p>
+        </div>
+    </div>
+
+    <!-- Topics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for topic in topics|sort(attribute='id') %}
+        <div class="bg-white rounded-xl shadow border overflow-hidden hover:shadow-lg transition-shadow">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: {{ topic.color }}20">
+                            <i class="{{ topic.icon }} text-lg" style="color: {{ topic.color }}"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-800">{{ topic.name }}</h3>
+                    </div>
+                </div>
+                
+                <!-- Topic descriptions based on name -->
+                {% if topic.name == "AREA I" %}
+                <p class="text-gray-600 text-sm mb-4">Agricultural and Biosystems Engineering - Power, Mechanization, and Management</p>
+                {% elif topic.name == "AREA II" %}
+                <p class="text-gray-600 text-sm mb-4">Soil and Water Resources Engineering, Hydrology, and Environmental Sciences</p>
+                {% elif topic.name == "AREA III" %}
+                <p class="text-gray-600 text-sm mb-4">Post-Harvest, Food Engineering, and Agricultural Structures</p>
+                {% elif topic.name == "Engineering Mathematics" %}
+                <p class="text-gray-600 text-sm mb-4">Comprehensive Mathematical Foundations for Agricultural and Biosystems Engineering</p>
+                {% elif topic.name == "PAES Standards" %}
+                <p class="text-gray-600 text-sm mb-4">Philippine Agricultural Engineering Standards and Specifications</p>
+                {% else %}
+                <p class="text-gray-600 text-sm mb-4">{{ topic.description or 'No description available' }}</p>
+                {% endif %}
+                
+                <div class="text-xs text-gray-400">
+                    Created: {{ topic.created_at.strftime('%b %d, %Y') }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full bg-white rounded-xl shadow p-12 text-center">
+            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/>
+            </svg>
+            <p class="text-gray-500">No topics available</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

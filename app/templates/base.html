@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}AgriQuest - AB Engineering Learning Platform{% endblock %}</title>
+    
+    <!-- CRITICAL: Pre-load dark mode background BEFORE anything else -->
+<style>
+    /* Force dark background IMMEDIATELY with NO transitions */
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Set default to dark - no flash possible */
+    html {
+        background-color: #0f0f1a !important;
+    }
+    
+    body {
+        background-color: #0f0f1a !important;
+    }
+    
+    /* Remove ALL transitions that cause flash */
+    *, *::before, *::after {
+        transition-property: none !important;
+    }
+    
+    /* Only allow transitions after page loads (prevents flash) */
+    .page-loaded * {
+        transition-property: all, transform, opacity, background-color, border-color, color, fill, stroke !important;
+        transition-duration: 0.2s !important;
+    }
+</style>
+
+<script>
+    // Apply class BEFORE page renders
+    (function() {
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = stored === 'dark' || (!stored && prefersDark);
+        
+        if (isDark) {
+            document.documentElement.classList.add('dark-mode');
+            // Force inline background
+            document.documentElement.style.backgroundColor = '#0f0f1a';
+            document.body.style.backgroundColor = '#0f0f1a';
+        } else {
+            document.documentElement.classList.add('light-mode');
+            document.documentElement.style.backgroundColor = '#fafafa';
+            document.body.style.backgroundColor = '#fafafa';
+        }
+        
+        // Mark as loaded so transitions can resume
+        setTimeout(function() {
+            document.documentElement.classList.add('page-loaded');
+        }, 100);
+    })();
+</script>
+    <!-- CRITICAL: Pre-set background color BEFORE any rendering with NO TRANSITION -->
+    <style>
+        /* NO TRANSITIONS - instant background, no flashing */
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Force black/dark background instantly */
+        html {
+            background-color: #0f0f1a !important;
+        }
+        
+        /* Lock the background - no transitions that could cause flash */
+        html.dark-mode,
+        html.dark-mode body {
+            background-color: #0f0f1a !important;
+        }
+        
+        html.light-mode,
+        html.light-mode body {
+            background-color: #fafafa !important;
+        }
+        
+        /* Remove ALL transitions that might cause visual flash */
+        * {
+            transition-property: none !important;
+        }
+        
+        /* Allow only specific transitions for hover effects */
+        .card, .btn-primary, .conversation-item {
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+    </style>
+    
+    <!-- CRITICAL: Apply theme IMMEDIATELY - this runs before page renders -->
+    <script>
+        (function() {
+            // Get theme preference
+            const storedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = storedTheme === 'dark' || (!storedTheme && prefersDark);
+            
+            // Apply to documentElement IMMEDIATELY
+            if (isDark) {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.classList.remove('light-mode');
+                // Force inline style to ensure no white shows
+                document.documentElement.style.backgroundColor = '#0f0f1a';
+                document.body.style.backgroundColor = '#0f0f1a';
+            } else {
+                document.documentElement.classList.add('light-mode');
+                document.documentElement.classList.remove('dark-mode');
+                document.documentElement.style.backgroundColor = '#fafafa';
+                document.body.style.backgroundColor = '#fafafa';
+            }
+            
+            // Store in sessionStorage for navigation persistence
+            sessionStorage.setItem('theme', isDark ? 'dark' : 'light');
+        })();
+    </script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/messages.css') }}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --lavender-light: #f5f3ff;
+            --lavender-medium: #ede9fe;
+            --lavender-dark: #ddd6fe;
+            --peach-accent: #fed7aa;
+            --blue-accent: #93c5fd;
+            --purple-accent: #c4b5fd;
+        }
+        
+        /* Base body styling - NO transitions on background */
+        body {
+            background-color: inherit;
+        }
+        
+        /* Light mode styles */
+        html.light-mode body {
+            background-color: #fafafa;
+        }
+        
+        /* Dark mode overrides - FORCE all backgrounds to dark with !important */
+        html.dark-mode body {
+            background-color: #0f0f1a !important;
+        }
+        
+        html.dark-mode .sidebar-bg {
+            background-color: #1a1a2e !important;
+        }
+        
+        html.dark-mode .card {
+            background-color: #1e1e2e !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+            color: #e0e0e0 !important;
+        }
+        
+        html.dark-mode .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        html.dark-mode .bg-gray-50 {
+            background-color: #0f0f1a !important;
+        }
+        
+        html.dark-mode .bg-gray-100 {
+            background-color: #1a1a2a !important;
+        }
+        
+        html.dark-mode .text-gray-600,
+        html.dark-mode .text-gray-700,
+        html.dark-mode .text-gray-800 {
+            color: #c0c0c0 !important;
+        }
+        
+        html.dark-mode .border-gray-200,
+        html.dark-mode .border-gray-300 {
+            border-color: #2a2a3a !important;
+        }
+        
+        html.dark-mode .bg-white {
+            background-color: #1e1e2e !important;
+        }
+        
+        html.dark-mode .hover\:bg-gray-50:hover {
+            background-color: #2a2a3a !important;
+        }
+        
+        html.dark-mode .conversation-list {
+            background-color: #1a1a2a !important;
+            border-right-color: #2a2a3a !important;
+        }
+        
+        html.dark-mode .conversation-item {
+            border-bottom-color: #2a2a3a !important;
+        }
+        
+        html.dark-mode .conversation-item:hover {
+            background-color: #2a2a3a !important;
+        }
+        
+        html.dark-mode .conversation-item.active {
+            background-color: #2d2d44 !important;
+            border-left-color: #60a5fa !important;
+        }
+        
+        html.dark-mode .message-bubble.received {
+            background-color: #2a2a3a !important;
+            color: #e0e0e0 !important;
+        }
+        
+        html.dark-mode .search-input {
+            background-color: #1a1a2a !important;
+            border-color: #2a2a3a !important;
+            color: #e0e0e0 !important;
+        }
+        
+        html.dark-mode .search-input:focus {
+            background-color: #22223b !important;
+            border-color: #60a5fa !important;
+        }
+        
+        html.dark-mode .pinned-section {
+            border-bottom-color: #2a2a3a !important;
+        }
+        
+        html.dark-mode .messages-container {
+            background-color: #1e1e2e !important;
+        }
+        
+        html.dark-mode .flash-message-success {
+            background-color: #064e3b !important;
+            border-left-color: #10b981 !important;
+        }
+        
+        html.dark-mode .flash-message-error {
+            background-color: #7f1d1d !important;
+            border-left-color: #ef4444 !important;
+        }
+        
+        html.dark-mode .flash-message-info {
+            background-color: #1e3a5f !important;
+            border-left-color: #3b82f6 !important;
+        }
+        
+        /* Dark mode scrollbar */
+        html.dark-mode .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        
+        html.dark-mode .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2a2a3a;
+        }
+        
+        html.dark-mode .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #3a3a4a;
+        }
+        
+        /* Light mode styles */
+        html.light-mode body {
+            background-color: #fafafa;
+        }
+        
+        .sidebar-bg {
+            background-color: var(--lavender-light);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple-accent), var(--blue-accent));
+            color: white;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .progress-bar {
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #e5e7eb;
+        }
+        
+        .progress-fill {
+            height: 8px;
+            border-radius: 10px;
+            transition: width 0.8s ease-in-out;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        .messages-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .conversation-list {
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+        }
+        
+        .conversation-item {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .conversation-item:hover {
+            background: #f1f5f9;
+        }
+        
+        .conversation-item.active {
+            background: #dbeafe;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        
+        .message-bubble.sent {
+            background: #3b82f6;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-bubble.received {
+            background: #f1f5f9;
+            color: #334155;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        .typing-dots {
+            display: inline-flex;
+            margin-left: 4px;
+        }
+        
+        .typing-dots span {
+            height: 4px;
+            width: 4px;
+            border-radius: 50%;
+            background: #64748b;
+            margin: 0 1px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        .search-input {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input:focus {
+            background: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .pinned-section {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .online-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .unread-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .sticky {
+            position: sticky;
+            top: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 overflow-hidden">
+    {% if current_user.is_authenticated %}
+        <!-- Fixed Header - no gap -->
+        <div class="fixed top-0 left-0 right-0 z-50">
+            {% include 'components/header.html' %}
+        </div>
+        
+        <!-- Fixed Sidebar + Scrollable Content -->
+        <div class="flex h-screen pt-16">
+            <!-- Fixed Sidebar -->
+            <div class="fixed left-0 top-16 bottom-0 w-64 z-40 overflow-y-auto sidebar-bg">
+                {% include 'components/sidebar.html' %}
+            </div>
+            
+            <!-- Scrollable Main Content - offset for fixed sidebar -->
+            <main class="flex-1 ml-64 overflow-y-auto h-full">
+                <div class="p-6">
+                    <!-- Flash messages for authenticated users -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="mb-6">
+                                {% for category, message in messages %}
+                                    <div class="card p-4 fade-in border-l-4 {% if category == 'success' %}border-green-500 bg-green-50{% elif category == 'error' %}border-red-500 bg-red-50{% else %}border-blue-500 bg-blue-50{% endif %}">
+                                        <div class="flex items-center">
+                                            <i class="fas {% if category == 'success' %}fa-check-circle text-green-600{% elif category == 'error' %}fa-exclamation-circle text-red-600{% else %}fa-info-circle text-blue-600{% endif %} mr-3"></i>
+                                            <span class="{% if category == 'success' %}text-green-800{% elif category == 'error' %}text-red-800{% else %}text-blue-800{% endif %}">{{ message }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    {% else %}
+        {% block auth_content %}{% endblock %}
+    {% endif %}
+    
+    <!-- Chart.js and plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Your custom scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart-init.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/community.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/posts.js') }}"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    <!-- CRITICAL: Theme persistence and NO FLASH script - runs last to ensure everything is dark -->
+    <script>
+        (function() {
+            // Get theme preference
+            const storedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = storedTheme === 'dark' || (!storedTheme && prefersDark);
+            
+            // Force apply theme to EVERYTHING
+            const applyTheme = function(dark) {
+                if (dark) {
+                    document.documentElement.classList.add('dark-mode');
+                    document.documentElement.classList.remove('light-mode');
+                    document.documentElement.style.backgroundColor = '#0f0f1a';
+                    document.body.style.backgroundColor = '#0f0f1a';
+                    document.body.style.color = '#e0e0e0';
+                } else {
+                    document.documentElement.classList.add('light-mode');
+                    document.documentElement.classList.remove('dark-mode');
+                    document.documentElement.style.backgroundColor = '#fafafa';
+                    document.body.style.backgroundColor = '#fafafa';
+                    document.body.style.color = '#1a1a1a';
+                }
+            };
+            
+            // Apply theme NOW
+            applyTheme(isDark);
+            
+            // Make current_user_id available to JavaScript
+            window.currentUserId = {{ current_user.id if current_user.is_authenticated else 0 }};
+            
+            // Make current_user available
+            window.currentUser = {
+                id: {{ current_user.id if current_user.is_authenticated else 0 }},
+                name: '{{ current_user.name if current_user.is_authenticated else "" }}',
+                is_admin: {{ 'true' if current_user.is_authenticated and current_user.is_admin else 'false' }}
+            };
+            
+            // Make CSRF token available globally
+            window.csrfToken = "{{ csrf_token() }}";
+            
+            // Store theme in sessionStorage
+            sessionStorage.setItem('theme', isDark ? 'dark' : 'light');
+            
+            // Intercept navigation to ensure no flash
+            document.addEventListener('click', function(e) {
+                // Find if clicked element is a link
+                let target = e.target;
+                while (target && target.tagName !== 'A') {
+                    target = target.parentElement;
+                }
+                if (target && target.tagName === 'A' && target.href && !target.target) {
+                    // Store theme before navigation
+                    const currentTheme = document.documentElement.classList.contains('dark-mode') ? 'dark' : 'light';
+                    sessionStorage.setItem('pendingTheme', currentTheme);
+                }
+            });
+            
+            // Restore theme on page load (for pageshow and load events)
+            const restoreTheme = function() {
+                const pendingTheme = sessionStorage.getItem('pendingTheme');
+                const storedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                
+                let isDark;
+                if (pendingTheme) {
+                    isDark = pendingTheme === 'dark';
+                    sessionStorage.removeItem('pendingTheme');
+                } else {
+                    isDark = storedTheme === 'dark' || (!storedTheme && prefersDark);
+                }
+                
+                // Force apply theme to document
+                if (isDark) {
+                    document.documentElement.classList.add('dark-mode');
+                    document.documentElement.classList.remove('light-mode');
+                    document.documentElement.style.backgroundColor = '#0f0f1a';
+                    document.body.style.backgroundColor = '#0f0f1a';
+                } else {
+                    document.documentElement.classList.add('light-mode');
+                    document.documentElement.classList.remove('dark-mode');
+                    document.documentElement.style.backgroundColor = '#fafafa';
+                    document.body.style.backgroundColor = '#fafafa';
+                }
+            };
+            
+            // Run restore on page show and load
+            window.addEventListener('pageshow', restoreTheme);
+            document.addEventListener('DOMContentLoaded', restoreTheme);
+        })();
+        
+        // GLOBAL POPUP KILLER - prevents any notifications/toasts
+        (function() {
+            // Disable all toast functions globally
+            if (window.messages) {
+                window.messages.showToast = function() {};
+            }
+            
+            // Override fetch to block notification endpoints
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (typeof url === 'string') {
+                    if (url.includes('/notifications/') || 
+                        url.includes('/api/notifications') ||
+                        url.includes('toast')) {
+                        return Promise.resolve(new Response(JSON.stringify({success: true}), {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json' }
+                        }));
+                    }
+                }
+                return originalFetch.call(this, url, options);
+            };
+        })();
+    </script>
+    <script src="{{ url_for('static', filename='js/profile-upload.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-150">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Privacy Policy</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Last updated: {{ now.strftime('%B %d, %Y') }}</p>
+        </div>
+        
+        <div class="p-6">
+            <div class="prose max-w-none dark:prose-invert">
+                
+                <p class="text-gray-700 dark:text-gray-300 mb-4">
+                    This privacy policy will help you understand how <strong>AB Engineering Guild</strong> uses and protects the data you provide to us when you visit and use our platform.
+                </p>
+
+                <p class="text-gray-700 dark:text-gray-300 mb-4">
+                    We reserve the right to change this policy at any given time, of which you will be promptly updated. If you want to make sure you are up to date with the latest changes, we advise you to frequently visit this page.
+                </p>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">What User Data We Collect</h2>
+                    <p class="text-gray-700 dark:text-gray-300 mb-2">When you use AB Engineering Guild, we may collect the following data:</p>
+                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                        <li>Your name, email address, and student information</li>
+                        <li>Your IP address and browser type</li>
+                        <li>Quiz results and learning progress</li>
+                        <li>Your interests and preferred reviewer topics</li>
+                        <li>Data regarding your online behavior on our platform</li>
+                    </ul>
+                </section>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Why We Collect Your Data</h2>
+                    <p class="text-gray-700 dark:text-gray-300 mb-2">We are collecting your data for several reasons:</p>
+                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                        <li>To better understand your learning needs</li>
+                        <li>To improve our quiz questions and reviewer materials</li>
+                        <li>To send you study reminders and platform announcements</li>
+                        <li>To track your progress and generate performance analytics</li>
+                        <li>To customize your dashboard according to your learning behavior</li>
+                        <li>To calculate rankings on the Online Scoreboard</li>
+                    </ul>
+                </section>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Safeguarding and Securing Your Data</h2>
+                    <p class="text-gray-700 dark:text-gray-300">
+                        AB Engineering Guild is committed to securing your data and keeping it confidential. We have done all in our power to prevent data theft, unauthorized access, and disclosure by implementing the latest technologies and software, which help us safeguard all the information we collect online. Your passwords are hashed, and all data transmission uses HTTPS encryption.
+                    </p>
+                </section>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Links to Other Websites</h2>
+                    <p class="text-gray-700 dark:text-gray-300">
+                        Our platform may contain links that lead to other websites (such as PAES references or educational resources). If you click on these links, AB Engineering Guild is not held responsible for your data and privacy protection. Visiting those websites is not governed by this privacy policy agreement. Make sure to read the privacy policy documentation of the website you go to from our platform.
+                    </p>
+                </section>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Restricting the Collection of Your Personal Data</h2>
+                    <p class="text-gray-700 dark:text-gray-300 mb-2">
+                        At some point, you might wish to restrict the use and collection of your personal data. You can achieve this by doing the following:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                        <li>You can update your profile settings to hide certain information</li>
+                    </ul>
+                    <p class="text-gray-700 dark:text-gray-300 mt-2">
+                        If you have already agreed to share your information with us, feel free to contact us via email and we will be more than happy to change this for you.
+                    </p>
+                </section>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Data Sharing</h2>
+                    <p class="text-gray-700 dark:text-gray-300">
+                        AB Engineering Guild will not lease, sell, or distribute your personal information to any third parties, unless we have your permission. We might do so if the law forces us. Your personal information will be used to improve your learning experience and send you relevant study materials if you agree to this privacy policy. Your quiz scores and rank may be visible to other students on the Scoreboard, but your email and personal contact information remain private.
+                    </p>
+                </section>
+
+                <section class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Contact Us</h2>
+                    <p class="text-gray-700 dark:text-gray-300">
+                        If you have any questions about this Privacy Policy or want to request deletion of your data, please contact us at <a href="mailto:abengineeringguild@gmail.com" class="text-green-600 dark:text-green-400 hover:underline">abengineeringguild@gmail.com</a>.
+                    </p>
+                </section>
+
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
+                        By using AB Engineering Guild, you consent to this privacy policy.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

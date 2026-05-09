@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+            Achievements Gallery
+        </h1>
+        <p class="text-gray-600">Collect badges, earn points, and become a master!</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-xl p-4 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Points</p>
+                    <p class="text-2xl font-bold" id="total-points">0</p>
+                </div>
+                <i class="fas fa-star text-3xl opacity-75"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-r from-blue-400 to-blue-500 rounded-xl p-4 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Unlocked</p>
+                    <p class="text-2xl font-bold" id="unlocked-count">0/<span id="total-count">0</span></p>
+                </div>
+                <i class="fas fa-medal text-3xl opacity-75"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-r from-green-400 to-green-500 rounded-xl p-4 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Completion</p>
+                    <p class="text-2xl font-bold" id="completion-percent">0%</p>
+                </div>
+                <i class="fas fa-chart-line text-3xl opacity-75"></i>
+            </div>
+        </div>
+        <div class="bg-gradient-to-r from-purple-400 to-purple-500 rounded-xl p-4 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Next Milestone</p>
+                    <p class="text-2xl font-bold" id="next-milestone">0</p>
+                </div>
+                <i class="fas fa-flag-checkered text-3xl opacity-75"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="flex flex-wrap gap-2 mb-6">
+        <button onclick="filterAchievements('all')" class="filter-btn px-4 py-2 rounded-lg bg-green-600 text-white transition-all" data-filter="all">
+            All
+        </button>
+        <button onclick="filterAchievements('quiz')" class="filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all" data-filter="quiz">
+            <i class="fas fa-clipboard-list mr-1"></i> Quiz
+        </button>
+        <button onclick="filterAchievements('streak')" class="filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all" data-filter="streak">
+            <i class="fas fa-fire mr-1"></i> Streak
+        </button>
+        <button onclick="filterAchievements('mastery')" class="filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all" data-filter="mastery">
+            <i class="fas fa-graduation-cap mr-1"></i> Mastery
+        </button>
+        <button onclick="filterAchievements('social')" class="filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all" data-filter="social">
+            <i class="fas fa-users mr-1"></i> Social
+        </button>
+        <button onclick="filterAchievements('special')" class="filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all" data-filter="special">
+            <i class="fas fa-star mr-1"></i> Special
+        </button>
+    </div>
+
+    <!-- Recent Unlocks -->
+    <div id="recent-section" class="mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-clock text-green-500 mr-2"></i>
+            Recently Unlocked
+        </h2>
+        <div id="recent-list" class="flex flex-wrap gap-3">
+            <div class="text-gray-500 text-sm">Loading recent unlocks...</div>
+        </div>
+    </div>
+
+    <!-- Achievements Grid -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-gem text-yellow-500 mr-2"></i>
+            All Achievements
+        </h2>
+        <div id="achievements-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-spinner fa-spin text-3xl text-green-500"></i>
+                <p class="text-gray-500 mt-2">Loading achievements...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .achievement-card {
+        transition: all 0.3s ease;
+    }
+    .achievement-card:hover {
+        transform: translateY(-4px);
+    }
+    .achievement-card.locked {
+        opacity: 0.7;
+        filter: grayscale(0.3);
+    }
+    .progress-bar-fill {
+        transition: width 0.5s ease;
+    }
+    .filter-btn.active {
+        background-color: #16a34a;
+        color: white;
+    }
+    .badge-icon {
+        transition: transform 0.3s ease;
+    }
+    .achievement-card:hover .badge-icon {
+        transform: scale(1.1);
+    }
+</style>
+
+<script>
+let allAchievements = [];
+let currentFilter = 'all';
+let checkInterval = null;
+
+function safeSetText(id, text) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = text;
+    }
+}
+
+function safeSetHTML(id, html) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.innerHTML = html;
+    }
+}
+
+// Load achievements data
+async function loadAchievements() {
+    try {
+        const response = await fetch('/achievements/api/data', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            allAchievements = data.achievements || [];
+            
+            safeSetText('total-points', data.stats.total_points || 0);
+            
+            const unlockedSpan = document.getElementById('unlocked-count');
+            if (unlockedSpan) {
+                unlockedSpan.innerHTML = `${data.stats.total_unlocked || 0}/${data.stats.total_achievements || 0}`;
+            }
+            
+            safeSetText('total-count', data.stats.total_achievements || 0);
+            safeSetText('completion-percent', `${data.stats.completion_percentage || 0}%`);
+            
+            const currentPercent = data.stats.completion_percentage || 0;
+            const nextMilestone = Math.min(100, Math.ceil((currentPercent + 10) / 10) * 10);
+            safeSetText('next-milestone', `${nextMilestone}%`);
+            
+            renderRecent(data.recent || []);
+            renderAchievements();
+        } else {
+            throw new Error(data.error || 'Failed to load achievements');
+        }
+    } catch (error) {
+        console.error('Error loading achievements:', error);
+        const grid = document.getElementById('achievements-grid');
+        if (grid) {
+            grid.innerHTML = `<div class="col-span-full text-center py-12">
+                <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-2"></i>
+                <p class="text-red-500">Failed to load achievements. Please refresh the page.</p>
+                <p class="text-gray-400 text-sm mt-2">${error.message}</p>
+            </div>`;
+        }
+    }
+}
+
+function renderRecent(recent) {
+    const container = document.getElementById('recent-list');
+    if (!container) return;
+    
+    if (!recent || recent.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No achievements unlocked yet. Keep studying!</p>';
+        return;
+    }
+    
+    container.innerHTML = recent.map(achievement => `
+        <div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <i class="${achievement.icon || 'fas fa-trophy'} text-green-500"></i>
+            <span class="text-sm font-medium text-gray-700">${escapeHtml(achievement.name || 'Achievement')}</span>
+            <span class="text-xs text-gray-500">+${achievement.points || 0} pts</span>
+        </div>
+    `).join('');
+}
+
+function getBadgeColorClass(isUnlocked, badgeColor) {
+    if (!isUnlocked) return 'bg-gray-300';
+    
+    const colors = {
+        'yellow': 'bg-yellow-500',
+        'green': 'bg-green-500',
+        'blue': 'bg-blue-500',
+        'purple': 'bg-purple-500',
+        'red': 'bg-red-500',
+        'indigo': 'bg-indigo-500',
+        'pink': 'bg-pink-500',
+        'orange': 'bg-orange-500'
+    };
+    return colors[badgeColor] || 'bg-yellow-500';
+}
+
+function renderAchievements() {
+    const container = document.getElementById('achievements-grid');
+    if (!container) return;
+    
+    let filteredAchievements = allAchievements;
+    if (currentFilter !== 'all') {
+        filteredAchievements = allAchievements.filter(a => a.category === currentFilter);
+    }
+    
+    if (filteredAchievements.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-12">
+            <i class="fas fa-trophy text-gray-300 text-3xl mb-2"></i>
+            <p class="text-gray-500">No achievements found in this category.</p>
+        </div>`;
+        return;
+    }
+    
+    filteredAchievements.sort((a, b) => {
+        if (a.is_unlocked !== b.is_unlocked) return a.is_unlocked ? -1 : 1;
+        return (b.progress || 0) - (a.progress || 0);
+    });
+    
+    container.innerHTML = filteredAchievements.map(achievement => {
+        const isUnlocked = achievement.is_unlocked || false;
+        const progress = achievement.progress || 0;
+        const badgeColorClass = getBadgeColorClass(isUnlocked, achievement.badge_color);
+        const progressColor = isUnlocked ? '#6ee7b7' : '#fed7aa';
+        
+        return `
+        <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'} bg-white rounded-xl shadow-md overflow-hidden border ${isUnlocked ? 'border-green-200' : 'border-gray-200'}">
+            <div class="p-5 text-center">
+                <!-- Badge Icon -->
+                <div class="w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center ${badgeColorClass}">
+                    <i class="${achievement.icon || 'fas fa-trophy'} text-3xl text-white badge-icon"></i>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="font-bold text-gray-800 mb-1 text-sm">${escapeHtml(achievement.name || 'Achievement')}</h3>
+                
+                <!-- Description -->
+                <p class="text-xs text-gray-500 mb-3">${escapeHtml(achievement.description || 'No description')}</p>
+                
+                <!-- Progress Bar with inline styles for guaranteed color -->
+                <div class="mb-3">
+                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Progress</span>
+                        <span>${Math.round(progress)}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div class="progress-bar-fill rounded-full h-2" style="width: ${progress}%; background-color: ${progressColor};"></div>
+                    </div>
+                </div>
+                
+                <!-- Points & Status -->
+                <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                    <div class="flex items-center gap-1">
+                        <i class="fas fa-star text-yellow-500 text-xs"></i>
+                        <span class="text-xs font-medium text-gray-600">${achievement.points || 0} pts</span>
+                    </div>
+                    ${isUnlocked ? 
+                        `<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            <i class="fas fa-check-circle mr-1"></i>Unlocked
+                        </span>` : 
+                        `<span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">
+                            <i class="fas fa-lock mr-1"></i>Locked
+                        </span>`
+                    }
+                </div>
+                
+                ${achievement.unlocked_at ? `
+                    <div class="mt-2 text-xs text-gray-400">
+                        Unlocked: ${new Date(achievement.unlocked_at).toLocaleDateString()}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `}).join('');
+}
+
+function filterAchievements(category) {
+    currentFilter = category;
+    
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.filter === category) {
+            btn.classList.add('active');
+            btn.classList.remove('bg-gray-200', 'text-gray-700');
+            btn.classList.add('bg-green-600', 'text-white');
+        } else {
+            btn.classList.remove('active', 'bg-green-600', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+        }
+    });
+    
+    renderAchievements();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+let isChecking = false;
+
+async function checkNewAchievements() {
+    if (isChecking) return;
+    isChecking = true;
+    
+    try {
+        const response = await fetch('/achievements/api/check', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.unlocked && data.unlocked.length > 0) {
+            data.unlocked.forEach(achievement => {
+                showAchievementToast(achievement);
+            });
+            await loadAchievements();
+        }
+    } catch (error) {
+        console.error('Error checking achievements:', error);
+    } finally {
+        isChecking = false;
+    }
+}
+
+function showAchievementToast(achievement) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 z-50 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full';
+    toast.innerHTML = `
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                <i class="${achievement.icon || 'fas fa-trophy'} text-yellow-500 text-xl"></i>
+            </div>
+            <div>
+                <p class="font-bold text-sm">Achievement Unlocked!</p>
+                <p class="text-xs opacity-90">${escapeHtml(achievement.name)} (+${achievement.points || 0} pts)</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+function startAchievementChecker() {
+    if (checkInterval) {
+        clearInterval(checkInterval);
+    }
+    setTimeout(() => checkNewAchievements(), 1000);
+    checkInterval = setInterval(checkNewAchievements, 60000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAchievements();
+    startAchievementChecker();
+});
+
+window.addEventListener('beforeunload', () => {
+    if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+    }
+});
+</script>
+{% endblock %}
